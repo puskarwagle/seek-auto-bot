@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.log
+*.sqlite3
+*.env
+.env.*
+.envrc
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+Pipfile.lock
+poetry.lock
+
+# FastAPI/Uvicorn
+*.db
+*.pid
+
+# VSCode + JetBrains
+.vscode/
+.idea/
+
+# macOS/Linux
+.DS_Store
+*.swp
+*.swo
+
+# Frontend build junk
+node_modules/
+dist/
+build/
+*.map
+
+# Logs and data
+*.log
+logs/
+data/*.json
+data/*.csv
+
+# System
+Thumbs.db
