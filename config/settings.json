@@ -1,0 +1,26 @@
+{
+  "user": {
+    "email": "user@example.com",
+    "password": "encrypted_password",
+    "agreement_accepted": true,
+    "agreement_timestamp": "2025-01-15T10:30:00Z"
+  },
+  "job_preferences": {
+    "keywords": ["python", "backend", "api"],
+    "locations": ["Sydney", "Melbourne", "Remote"],
+    "salary_min": 80000,
+    "salary_max": 150000,
+    "job_types": ["full-time", "contract"],
+    "experience_levels": ["mid", "senior"]
+  },
+  "application_settings": {
+    "auto_apply": true,
+    "max_applications_per_day": 20,
+    "cover_letter_template": "template text here",
+    "cv_path": "/path/to/cv.pdf"
+  },
+  "deepseek_api": {
+    "api_key": "your_key_here",
+    "enabled": false
+  }
+}
