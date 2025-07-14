@@ -40,6 +40,9 @@ build/
 logs/
 data/*.json
 data/*.csv
+data/logs.json
+notes.txt
+data/encryption.key
 
 # System
 Thumbs.db

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# main.py
 """
 Seek Bot - Automated Job Application System
 Entry point for CLI and bot orchestration
@@ -14,16 +14,16 @@ from utils.logging import setup_logging, logger
 from utils.storage import JSONStorage
 from utils.errors import SeekBotError, handle_critical_error
 from core.auth import SeekAuth
-from core.scraper import SeekScraper
-from core.applicator import JobApplicator
+# from core.scraper import SeekScraper
+# from core.applicator import JobApplicator
 
 
 class SeekBot:
     def __init__(self):
         self.storage = JSONStorage()
         self.auth = SeekAuth()
-        self.scraper = SeekScraper()
-        self.applicator = JobApplicator()
+        # self.scraper = SeekScraper()
+        # self.applicator = JobApplicator()
         self.running = False
         self.current_task = "idle"
         
@@ -54,10 +54,12 @@ class SeekBot:
             return False
     
     def _get_nested_value(self, obj: dict, path: str):
-        """Get nested dictionary value using dot notation"""
+        """Get nested dictionary value using dot notation, raise if key missing"""
         keys = path.split('.')
         for key in keys:
-            obj = obj.get(key, {})
+            if not isinstance(obj, dict) or key not in obj:
+                raise KeyError(f"Missing config key: '{key}' in path '{path}'")
+            obj = obj[key]
         return obj
     
     async def start(self):

@@ -15,7 +15,7 @@
   },
   "application_settings": {
     "auto_apply": true,
-    "max_applications_per_day": 20,
+    "max_applications_per_day": 1,
     "cover_letter_template": "template text here",
     "cv_path": "/path/to/cv.pdf"
   },

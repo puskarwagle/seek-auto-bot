@@ -13,7 +13,6 @@ from cryptography.fernet import Fernet
 from utils.logging import logger
 from utils.errors import StorageError
 
-
 class JSONStorage:
     def __init__(self):
         self.base_dir = Path("data")

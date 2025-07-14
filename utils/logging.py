@@ -7,22 +7,24 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from loguru import logger as loguru_logger
-
-from utils.storage import JSONStorage
 
 
 class StructuredLogger:
     def __init__(self):
-        self.storage = None
         self.setup_complete = False
+        self.data_dir = Path("data")
+        self.logs_file = self.data_dir / "logs.json"
         
     def setup(self):
         """Setup structured logging"""
         if self.setup_complete:
             return
             
+        # Ensure data directory exists
+        self.data_dir.mkdir(exist_ok=True)
+        
         # Remove default handler
         loguru_logger.remove()
         
@@ -56,12 +58,6 @@ class StructuredLogger:
             retention="7 days"
         )
         
-        # Initialize storage after setup
-        try:
-            self.storage = JSONStorage()
-        except Exception as e:
-            loguru_logger.error(f"Failed to initialize storage for logging: {e}")
-        
         self.setup_complete = True
         loguru_logger.info("Structured logging initialized")
     
@@ -84,6 +80,41 @@ class StructuredLogger:
         
         return json.dumps(log_data)
     
+    def _save_log_to_storage(self, log_data: Dict[str, Any]):
+        """Save log to JSON storage independently"""
+        try:
+            # Add timestamp if not present
+            if "timestamp" not in log_data:
+                log_data["timestamp"] = datetime.now().isoformat()
+            
+            # Load existing logs
+            logs = self._load_logs_from_storage()
+            
+            # Add new log
+            logs.append(log_data)
+            
+            # Keep only last 1000 logs to prevent file bloat
+            if len(logs) > 1000:
+                logs = logs[-1000:]
+            
+            # Save back to file
+            with open(self.logs_file, 'w') as f:
+                json.dump(logs, f, indent=2)
+                
+        except Exception as e:
+            loguru_logger.error(f"Failed to save log to storage: {e}")
+    
+    def _load_logs_from_storage(self) -> List[Dict[str, Any]]:
+        """Load logs from JSON storage independently"""
+        try:
+            if self.logs_file.exists():
+                with open(self.logs_file, 'r') as f:
+                    return json.load(f)
+            return []
+        except Exception as e:
+            loguru_logger.error(f"Failed to load logs from storage: {e}")
+            return []
+    
     def log(self, level: str, message: str, module: str = None, **kwargs):
         """Log message with structured data"""
         if not self.setup_complete:
@@ -98,17 +129,13 @@ class StructuredLogger:
         # Log to file/console
         getattr(loguru_logger, level.lower())(message, extra=extra_data)
         
-        # Save to JSON storage
-        if self.storage:
-            try:
-                self.storage.save_log({
-                    "level": level.upper(),
-                    "message": message,
-                    "module": module or "seek_bot",
-                    "data": kwargs
-                })
-            except Exception as e:
-                loguru_logger.error(f"Failed to save log to storage: {e}")
+        # Save to JSON storage independently
+        self._save_log_to_storage({
+            "level": level.upper(),
+            "message": message,
+            "module": module or "seek_bot",
+            "data": kwargs
+        })
     
     def info(self, message: str, module: str = None, **kwargs):
         """Log info message"""
@@ -162,13 +189,10 @@ class StructuredLogger:
         """Log security events"""
         self.log(severity, f"Security: {event}", "security", event=event, **kwargs)
     
-    def get_recent_logs(self, limit: int = 100, level: str = None) -> list:
+    def get_recent_logs(self, limit: int = 100, level: str = None) -> List[Dict[str, Any]]:
         """Get recent logs from storage with optional level filtering"""
-        if not self.storage:
-            return []
-
         try:
-            logs = self.storage.load_logs()
+            logs = self._load_logs_from_storage()
 
             # Filter by level if specified
             if level:
@@ -181,3 +205,15 @@ class StructuredLogger:
         except Exception as e:
             loguru_logger.error(f"Failed to retrieve recent logs: {e}")
             return []
+
+
+# Global logger instance
+_logger = StructuredLogger()
+
+# Setup function for external use
+def setup_logging():
+    """Setup structured logging - call this once at app startup"""
+    _logger.setup()
+
+# Export the logger instance with same interface
+logger = _logger
