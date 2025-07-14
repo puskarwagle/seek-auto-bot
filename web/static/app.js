@@ -67,7 +67,7 @@ function seekBot() {
         // Load current config from backend
         async loadConfig() {
             try {
-                const res = await fetch('/config');
+                const res = await fetch('/api/config');
                 const data = await res.json();
                 this.config = data;
 
@@ -104,7 +104,7 @@ function seekBot() {
                     deepseek_enabled: this.config.deepseek_api.enabled
                 };
 
-                const res = await fetch('/config', {
+                const res = await fetch('/api/config', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -122,7 +122,7 @@ function seekBot() {
         // Refresh bot status
         async refreshStatus() {
             try {
-                const res = await fetch('/status');
+                const res = await fetch('/api/status');
                 const data = await res.json();
                 this.status = data;
             } catch (err) {
@@ -133,15 +133,15 @@ function seekBot() {
         // Load all persistent data
         async loadData() {
             try {
-                const jobsRes = await fetch('/jobs');
+                const jobsRes = await fetch('/api/jobs');
                 const jobsData = await jobsRes.json();
                 this.jobs = jobsData.jobs || [];
 
-                const appliedRes = await fetch('/applied');
+                const appliedRes = await fetch('/api/applied');
                 const appliedData = await appliedRes.json();
                 this.applied = appliedData.applied || [];
 
-                const logsRes = await fetch('/logs');
+                const logsRes = await fetch('/api/logs');
                 const logsData = await logsRes.json();
                 this.logs = logsData.logs || [];
             } catch (err) {
@@ -164,7 +164,7 @@ function seekBot() {
         async startBot() {
             this.startingBot = true;
             try {
-                const res = await fetch('/start', { method: 'POST' });
+                const res = await fetch('/api/start', { method: 'POST' });
                 const result = await res.json();
                 console.log('🚀 Bot started:', result);
                 await this.refreshStatus();
@@ -179,7 +179,7 @@ function seekBot() {
         async stopBot() {
             this.stoppingBot = true;
             try {
-                const res = await fetch('/stop', { method: 'POST' });
+                const res = await fetch('/api/stop', { method: 'POST' });
                 const result = await res.json();
                 console.log('⏹️ Bot stopped:', result);
                 await this.refreshStatus();
