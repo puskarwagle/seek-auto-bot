@@ -27,6 +27,56 @@ class JSONStorage:
         
         # Initialize encryption key
         self.encryption_key = self._get_or_create_encryption_key()
+    
+    def ensure_data_files(self) -> None:
+        """Ensure all required data files exist with proper structure"""
+        try:
+            # Ensure config exists
+            if not self.config_file.exists():
+                self._create_default_config()
+            
+            # Ensure jobs file exists
+            if not self.jobs_file.exists():
+                self._create_empty_jobs_file()
+            
+            # Ensure applied jobs file exists
+            if not self.applied_file.exists():
+                self._create_empty_applied_file()
+            
+            # Ensure logs file exists
+            if not self.logs_file.exists():
+                self._create_empty_logs_file()
+            
+            logger.info("All data files ensured and ready")
+            
+        except Exception as e:
+            logger.error(f"Failed to ensure data files: {e}")
+            raise StorageError(f"Data file initialization failed: {str(e)}")
+    
+    def _create_empty_jobs_file(self) -> None:
+        """Create empty jobs file with proper structure"""
+        data = {
+            "jobs": [],
+            "total_count": 0,
+            "last_updated": self.get_timestamp()
+        }
+        with open(self.jobs_file, 'w') as f:
+            json.dump(data, f, indent=2)
+    
+    def _create_empty_applied_file(self) -> None:
+        """Create empty applied jobs file with proper structure"""
+        data = {
+            "applications": [],
+            "total_count": 0,
+            "last_updated": self.get_timestamp()
+        }
+        with open(self.applied_file, 'w') as f:
+            json.dump(data, f, indent=2)
+    
+    def _create_empty_logs_file(self) -> None:
+        """Create empty logs file"""
+        with open(self.logs_file, 'w') as f:
+            json.dump([], f)
         
     def _get_or_create_encryption_key(self) -> bytes:
         """Get or create encryption key for sensitive data"""
@@ -149,7 +199,13 @@ class JSONStorage:
                 return []
             
             with open(self.jobs_file, 'r') as f:
-                jobs = json.load(f)
+                data = json.load(f)
+            
+            # Handle both old format (list) and new format (dict with jobs key)
+            if isinstance(data, list):
+                jobs = data
+            else:
+                jobs = data.get("jobs", [])
             
             logger.info(f"Loaded {len(jobs)} jobs from storage")
             return jobs
@@ -185,10 +241,15 @@ class JSONStorage:
                 return []
             
             with open(self.applied_file, 'r') as f:
-                applied = json.load(f)
+                data = json.load(f)
             
-            # Return just the applications list
-            return applied.get("applications", [])
+            # Handle both old format (list) and new format (dict with applications key)
+            if isinstance(data, list):
+                applied = data
+            else:
+                applied = data.get("applications", [])
+            
+            return applied
             
         except Exception as e:
             logger.error(f"Failed to load applied jobs: {e}")
