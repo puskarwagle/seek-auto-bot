@@ -43,6 +43,7 @@ data/*.csv
 data/logs.json
 notes.txt
 data/encryption.key
+current.txt
 
 # System
 Thumbs.db
