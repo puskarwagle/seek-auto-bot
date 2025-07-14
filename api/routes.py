@@ -1,3 +1,4 @@
+# api/routes.py
 """
 API Routes for Seek Bot Dashboard
 All REST endpoints for bot control and data
@@ -17,7 +18,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from utils.logging import logger
 from utils.storage import JSONStorage
 from utils.errors import SeekBotError
-from main import SeekBot
+from core.bot import SeekBot
 
 
 # Global bot instance
