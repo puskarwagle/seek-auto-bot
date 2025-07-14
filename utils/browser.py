@@ -1,3 +1,4 @@
+#utils/browser.py
 """
 Browser Management Module
 Handles Selenium WebDriver setup with anti-detection
@@ -16,7 +17,6 @@ import undetected_chromedriver as uc
 
 from utils.logging import logger
 from utils.errors import BrowserError
-
 
 class BrowserManager:
     def __init__(self):
@@ -60,8 +60,8 @@ class BrowserManager:
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-blink-features=AutomationControlled')
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option('useAutomationExtension', False)
+        # options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        # options.add_experimental_option('useAutomationExtension', False)
         
         # Performance options
         options.add_argument('--disable-background-timer-throttling')

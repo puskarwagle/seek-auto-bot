@@ -40,14 +40,14 @@ class StructuredLogger:
         log_dir = Path("logs")
         log_dir.mkdir(exist_ok=True)
 
-        loguru_logger.add(
-            log_dir / "seek_bot.log",
-            format="{time:YYYY-MM-DD HH:mm:ss} | {level:<8} | {name}:{function}:{line} - {message}",
-            level="DEBUG",
-            rotation="10 MB",
-            retention="7 days",
-            compression="zip",
-        )
+        # loguru_logger.add(
+        #     log_dir / "seek_bot.log",
+        #     format="{time:YYYY-MM-DD HH:mm:ss} | {level:<8} | {name}:{function}:{line} - {message}",
+        #     level="DEBUG",
+        #     rotation="10 MB",
+        #     retention="7 days",
+        #     compression="zip",
+        # )
 
         # JSON file handler - use sink function instead of format string
         loguru_logger.add(
@@ -59,11 +59,10 @@ class StructuredLogger:
         loguru_logger.info("Structured logging initialized")
 
     def _json_sink(self, message):
-        """JSON sink function that writes to file"""
+        """Sink function that appends log as an object in a JSON array"""
         try:
-            # Extract record from message
             record = message.record
-            
+
             log_data = {
                 "timestamp": record["time"].isoformat(),
                 "level": record["level"].name,
@@ -75,20 +74,29 @@ class StructuredLogger:
                 "thread": record["thread"].id,
             }
 
-            # Add extra data if present
+            # Add extra if present
             if record.get("extra"):
                 log_data["extra"] = record["extra"]
 
-            # Write to JSON log file
-            log_dir = Path("logs")
-            json_file = log_dir / "seek_bot.json"
-            
-            with open(json_file, "a") as f:
-                f.write(json.dumps(log_data) + "\n")
-                
+            log_file = Path("logs/seek_bot.json")
+            log_file.parent.mkdir(exist_ok=True)
+
+            # Load existing logs if file exists
+            logs = []
+            if log_file.exists():
+                with open(log_file, "r", encoding="utf-8") as f:
+                    try:
+                        logs = json.load(f)
+                    except json.JSONDecodeError:
+                        logs = []
+
+            # Append new log and write full array back
+            logs.append(log_data)
+            with open(log_file, "w", encoding="utf-8") as f:
+                json.dump(logs, f, indent=2)
+
         except Exception as e:
-            # Fallback to stderr if JSON logging fails
-            print(f"JSON logging failed: {e}", file=sys.stderr)
+            print(f"[JSON SINK ERROR] {e}", file=sys.stderr)
 
     def _save_log_to_storage(self, log_data: Dict[str, Any]):
         """Save log to JSON storage independently"""

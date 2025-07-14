@@ -1,4 +1,4 @@
-# api/main.py
+# aoi/main.py
 """
 FastAPI Server for Seek Bot Dashboard
 Main application entry point
@@ -6,6 +6,8 @@ Main application entry point
 
 import asyncio
 import sys
+import threading
+import time
 from pathlib import Path
 from contextlib import asynccontextmanager
 
@@ -22,30 +24,80 @@ sys.path.append(str(Path(__file__).parent.parent))
 from utils.logging import setup_logging, logger
 from utils.storage import JSONStorage
 from utils.errors import SeekBotError
+from utils.browser import BrowserManager
 from api.routes import router
 
 
-# Global bot instance
+# Global instances
 bot_instance = None
+dashboard_driver = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
-    # Startup
     logger.info("Starting Seek Bot Dashboard...")
-    
-    # Initialize storage and create default files
+
+    # Ensure data files exist
     storage = JSONStorage()
     storage.ensure_data_files()
-    
+    logger.info("All data files ensured and ready")
+
     yield
-    
-    # Shutdown
+
+    # Cleanup on shutdown
     logger.info("Shutting down Seek Bot Dashboard...")
-    global bot_instance
+    global bot_instance, dashboard_driver
+    
     if bot_instance and bot_instance.running:
         await bot_instance.stop()
+    
+    if dashboard_driver:
+        try:
+            dashboard_driver.quit()
+        except:
+            pass
+
+
+def wait_for_server_and_open_browser(host: str, port: int):
+    """Wait for server to be ready then open browser"""
+    import socket
+    import time
+    
+    def is_server_ready():
+        try:
+            with socket.create_connection((host, port), timeout=1):
+                return True
+        except:
+            return False
+    
+    # Wait for server to be ready (max 30 seconds)
+    for _ in range(30):
+        if is_server_ready():
+            logger.info("Server is ready, opening browser...")
+            try:
+                # Create browser and open dashboard
+                browser_manager = BrowserManager()
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                driver = loop.run_until_complete(browser_manager.create_driver())
+                driver.get(f"http://{host}:{port}")
+                
+                # Store global reference
+                global dashboard_driver
+                dashboard_driver = driver
+                
+                logger.info("Dashboard opened in browser successfully")
+                return
+                
+            except Exception as e:
+                logger.error(f"Failed to open browser: {e}")
+                return
+        
+        time.sleep(1)
+    
+    logger.error("Server failed to start within timeout")
 
 
 def create_app() -> FastAPI:
@@ -109,15 +161,28 @@ def main():
     """Run the FastAPI server"""
     setup_logging()
     
-    # Development configuration
+    # Server configuration
+    host = "127.0.0.1"
+    port = 8000
+    
     config = {
-        "host": "127.0.0.1",
-        "port": 8000,
+        "host": host,
+        "port": port,
         "reload": True,
         "log_level": "info"
     }
     
-    logger.info(f"Starting server at http://{config['host']}:{config['port']}")
+    logger.info(f"Starting server at http://{host}:{port}")
+    
+    # Start browser opener in background thread
+    browser_thread = threading.Thread(
+        target=wait_for_server_and_open_browser,
+        args=(host, port),
+        daemon=True
+    )
+    browser_thread.start()
+    
+    # Start FastAPI server
     uvicorn.run("api.main:app", **config)
 
 
