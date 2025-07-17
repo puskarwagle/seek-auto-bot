@@ -84,6 +84,12 @@ def wait_for_server_and_open_browser(host: str, port: int):
                 driver = loop.run_until_complete(browser_manager.create_driver())
                 driver.get(f"http://{host}:{port}")
                 
+                # Open seek.com.au in a new tab using Selenium's native method
+                driver.execute_script("window.open('about:blank', '_blank');")
+                driver.switch_to.window(driver.window_handles[1])
+                driver.get("https://www.seek.com.au")
+                driver.switch_to.window(driver.window_handles[0])  # Switch back to dashboard   
+
                 # Store global reference
                 global dashboard_driver
                 dashboard_driver = driver
@@ -98,7 +104,6 @@ def wait_for_server_and_open_browser(host: str, port: int):
         time.sleep(1)
     
     logger.error("Server failed to start within timeout")
-
 
 def create_app() -> FastAPI:
     """Create FastAPI application"""

@@ -75,6 +75,7 @@ class BrowserManager:
         options.add_argument('--disable-features=VizDisplayCompositor')
         options.add_argument('--disable-default-apps')
         options.add_argument('--disable-extensions')
+        options.add_argument('--disable-popup-blocking')
         
         # User agent and language
         user_agent = self._get_random_user_agent()
