@@ -103,32 +103,6 @@
           <h2 class="card-title text-primary">Configuration</h2>
 
           <form @submit.prevent="updateConfig()">
-            <!-- User Credentials -->
-            <div class="divider">Account Settings</div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Email</span>
-                </label>
-                <input
-                  type="email"
-                  class="input input-bordered"
-                  x-model="config.user.email"
-                  required
-                />
-              </div>
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Password</span>
-                </label>
-                <input
-                  type="password"
-                  class="input input-bordered"
-                  x-model="config.user.password"
-                  required
-                />
-              </div>
-            </div>
 
             <!-- Job Preferences -->
             <div class="divider">Job Preferences</div>

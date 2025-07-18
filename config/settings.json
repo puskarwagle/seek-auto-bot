@@ -1,7 +1,5 @@
 {
   "user": {
-    "email": "user@example.com",
-    "password": "encrypted_password",
     "agreement_accepted": true,
     "agreement_timestamp": "2025-01-15T10:30:00Z"
   },
