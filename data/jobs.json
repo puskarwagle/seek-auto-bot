@@ -1,1 +1,10 @@
-[]
+{
+  "jobs": [
+    {
+      "message": "Search completed successfully",
+      "search_term": "python developer"
+    }
+  ],
+  "total_count": 1,
+  "last_updated": "2025-07-19T03:24:45.721662"
+}

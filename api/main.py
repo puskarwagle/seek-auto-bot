@@ -60,28 +60,37 @@ async def lifespan(app: FastAPI):
 
 
 async def open_stealth_browser_delayed():
-    """Open stealth Chrome browser with seek.com.au and dashboard after server is ready"""
-    await asyncio.sleep(5)  # Wait longer for server to be fully ready
+    """Open stealth Chrome browser with seek.com.au first, then dashboard"""
+    await asyncio.sleep(6)  # Wait even longer for server to be fully ready
     try:
-        logger.info("Opening stealth Chrome browser with seek.com.au and dashboard...")
+        logger.info("Opening stealth Chrome browser...")
         # Get THE driver from THE overlord
         driver = get_the_driver_sync()
         
-        # First open seek.com.au (more reliable)
-        logger.info("Opening seek.com.au...")
+        # First open seek.com.au (external site, more reliable)
+        logger.info("Opening seek.com.au first...")
         driver.get("https://www.seek.com.au")
-        logger.info("Seek.com.au opened successfully")
+        logger.info("✅ Seek.com.au opened successfully")
         
-        # Wait a moment then open dashboard in new tab
-        await asyncio.sleep(2)
+        # Wait for seek.com.au to load completely
+        await asyncio.sleep(4)
+        
+        # Then try to open dashboard in new tab
         logger.info("Opening dashboard in new tab...")
-        driver.execute_script("window.open('http://127.0.0.1:3877', '_blank');")
-        
-        # Switch to dashboard tab
-        driver.switch_to.window(driver.window_handles[1])
-        logger.info("Dashboard opened in new tab")
-        
-        logger.info("Stealth Chrome browser setup completed successfully")
+        try:
+            driver.execute_script("window.open('http://127.0.0.1:3877', '_blank');")
+            logger.info("✅ Dashboard tab created")
+            
+            # Switch to dashboard tab (tab 1)
+            await asyncio.sleep(2)
+            driver.switch_to.window(driver.window_handles[1])
+            logger.info("✅ Switched to dashboard tab")
+            
+            logger.info("✅ Browser setup complete: Tab 0=Seek.com.au, Tab 1=Dashboard")
+            
+        except Exception as dashboard_error:
+            logger.warning(f"Dashboard tab failed: {dashboard_error}")
+            logger.info("✅ Seek.com.au is ready, dashboard accessible manually")
         
     except Exception as e:
         logger.error(f"Failed to open stealth Chrome browser: {e}")
