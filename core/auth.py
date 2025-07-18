@@ -8,6 +8,11 @@ from utils.logging import logger
 class SeekAuth:
     def __init__(self, browser_manager=None):
         self.browser_manager = browser_manager
+        self.driver = None
+    
+    def set_driver(self, driver):
+        """Set the driver for auth operations"""
+        self.driver = driver
         
     async def login(self):
         """User handles login manually"""

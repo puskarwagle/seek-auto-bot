@@ -28,23 +28,12 @@ class SeekBot:
         """Initialize bot and validate configuration"""
         try:
             logger.info("Initializing Seek Bot...")
-            config = self.storage.load_config()
-            if not config:
-                raise SeekBotError("No configuration found. Please configure via the dashboard.")
-            
-            required_fields = ["user.email", "user.password", "user.agreement_accepted"]
-            for field in required_fields:
-                if not self._get_nested_value(config, field):
-                    raise SeekBotError(f"Missing required field: {field}")
-            
-            if not config["user"]["agreement_accepted"]:
-                raise SeekBotError("User agreement not accepted. Cannot proceed.")
-            
-            logger.info("Configuration validated successfully")
+            # No config needed - user handles login manually on seek.com.au
+            logger.info("Bot ready - user handles login manually on seek.com.au")
             return True
             
         except Exception as e:
-            handle_critical_error(e, "Bot initialization failed")
+            logger.error(f"Bot initialization failed: {str(e)}")
             return False
     
     def _get_nested_value(self, obj: dict, path: str):
@@ -110,6 +99,10 @@ class SeekBot:
             return True
             
         except Exception as e:
+            logger.error(f"Bot execution failed: {str(e)}")
+            logger.error(f"Error type: {type(e).__name__}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             handle_critical_error(e, "Bot execution failed")
             return False
         finally:
