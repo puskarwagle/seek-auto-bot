@@ -1,18 +1,18 @@
-# core/bot.py
+# core/bot.py (FIXED)
 import asyncio
 from utils.logging import logger
 from utils.storage import JSONStorage
 from utils.errors import SeekBotError, handle_critical_error
+from utils.browser import BrowserManager
 from core.auth import SeekAuth
 from core.scraper import SeekScraper
-# from core.applicator import JobApplicator
 
 class SeekBot:
     def __init__(self):
         self.storage = JSONStorage()
-        self.auth = SeekAuth()
-        self.scraper = SeekScraper()
-        # self.applicator = JobApplicator()
+        self.browser_manager = BrowserManager()  # Singleton
+        self.auth = SeekAuth(self.browser_manager)
+        self.scraper = SeekScraper(self.browser_manager)
         self.running = False
         self.current_task = "idle"
 
@@ -54,14 +54,12 @@ class SeekBot:
         try:
             logger.info("Starting Seek Bot execution...")
 
-            # Step 1: Authenticate
-            self.current_task = "authenticating"
-            if not await self.auth.login():
-                raise SeekBotError("Authentication failed")
+            # Step 1: Skip auth
+            logger.info("Skipping authentication — user handles login manually.")
 
             # Step 2: Scrape jobs
             self.current_task = "scraping"
-            jobs = await self.scraper.scrape_jobs() if hasattr(self, "scraper") else []
+            jobs = await self.scraper.scrape_jobs()
             if not jobs:
                 logger.warning("No jobs found matching criteria")
                 self.current_task = "idle"
@@ -69,11 +67,11 @@ class SeekBot:
 
             logger.info(f"Found {len(jobs)} jobs matching criteria")
 
-            # Step 3: Apply to jobs
-            self.current_task = "applying"
-            applied_count = await self.applicator.apply_to_jobs(jobs) if hasattr(self, "applicator") else 0
-
-            logger.info(f"Applied to {applied_count} jobs successfully")
+            # Step 3: Apply to jobs (commented out for now)
+            # self.current_task = "applying"
+            # applied_count = await self.applicator.apply_to_jobs(jobs)
+            # logger.info(f"Applied to {applied_count} jobs successfully")
+            
             self.current_task = "completed"
             return True
 
@@ -94,8 +92,7 @@ class SeekBot:
     async def cleanup(self):
         try:
             await self.auth.logout()
-            if hasattr(self, "scraper"):
-                await self.scraper.close()
+            await self.scraper.close()
             logger.info("Cleanup completed")
         except Exception as e:
             logger.error(f"Cleanup error: {e}")

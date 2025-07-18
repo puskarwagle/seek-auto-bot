@@ -2,7 +2,7 @@ from utils.browser import BrowserManager
 from utils.logging import logger
 
 class SeekScraper:
-    def __init__(self):
+    def __init__(self, browser_manager: BrowserManager):
         self.browser_manager = BrowserManager()
 
     async def scrape_jobs(self):

@@ -90,74 +90,53 @@ class JSONStorage:
             key_file.chmod(0o600)  # Restrict permissions
             return key
     
-    def _encrypt_data(self, data: str) -> str:
-        """Encrypt sensitive data"""
-        try:
-            f = Fernet(self.encryption_key)
-            return f.encrypt(data.encode()).decode()
-        except Exception as e:
-            logger.error(f"Encryption failed: {e}")
-            return data
+    # def _encrypt_data(self, data: str) -> str:
+    #     """Encrypt sensitive data"""
+    #     try:
+    #         f = Fernet(self.encryption_key)
+    #         return f.encrypt(data.encode()).decode()
+    #     except Exception as e:
+    #         logger.error(f"Encryption failed: {e}")
+    #         return data
     
-    def _decrypt_data(self, encrypted_data: str) -> str:
-        """Decrypt sensitive data"""
-        try:
-            f = Fernet(self.encryption_key)
-            return f.decrypt(encrypted_data.encode()).decode()
-        except Exception as e:
-            logger.error(f"Decryption failed: {e}")
-            return encrypted_data
-    
+    # def _decrypt_data(self, encrypted_data: str) -> str:
+    #     """Decrypt sensitive data"""
+    #     try:
+    #         f = Fernet(self.encryption_key)
+    #         return f.decrypt(encrypted_data.encode()).decode()
+    #     except Exception as e:
+    #         logger.error(f"Decryption failed: {e}")
+    #         return encrypted_data
+        
     def load_config(self) -> Dict[str, Any]:
         """Load configuration from JSON file"""
         try:
             if not self.config_file.exists():
                 return self._create_default_config()
-            
             with open(self.config_file, 'r') as f:
                 config = json.load(f)
-            
-            # Decrypt password if present
-            if config.get("user", {}).get("password"):
-                config["user"]["password"] = self._decrypt_data(config["user"]["password"])
-            
-            # Decrypt API key if present
-            if config.get("deepseek_api", {}).get("api_key"):
-                config["deepseek_api"]["api_key"] = self._decrypt_data(config["deepseek_api"]["api_key"])
-            
             logger.info("Configuration loaded successfully")
             return config
-            
         except Exception as e:
             logger.error(f"Failed to load configuration: {e}")
             raise StorageError(f"Configuration load failed: {str(e)}")
-    
+
     def save_config(self, config: Dict[str, Any]) -> bool:
         """Save configuration to JSON file"""
         try:
             # Create a copy to avoid modifying original
             config_copy = config.copy()
-            
-            # Encrypt sensitive data
-            if config_copy.get("user", {}).get("password"):
-                config_copy["user"]["password"] = self._encrypt_data(config_copy["user"]["password"])
-            
-            if config_copy.get("deepseek_api", {}).get("api_key"):
-                config_copy["deepseek_api"]["api_key"] = self._encrypt_data(config_copy["deepseek_api"]["api_key"])
-            
             # Add timestamp
             config_copy["last_updated"] = self.get_timestamp()
             
             with open(self.config_file, 'w') as f:
                 json.dump(config_copy, f, indent=2)
-            
             logger.info("Configuration saved successfully")
             return True
-            
         except Exception as e:
             logger.error(f"Failed to save configuration: {e}")
             raise StorageError(f"Configuration save failed: {str(e)}")
-    
+
     def _create_default_config(self) -> Dict[str, Any]:
         """Create default configuration"""
         default_config = {
