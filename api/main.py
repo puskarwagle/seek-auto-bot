@@ -41,6 +41,9 @@ async def lifespan(app: FastAPI):
     storage = JSONStorage()
     storage.ensure_data_files()
     logger.info("All data files ensured and ready")
+    
+    # Open stealth Chrome browser automatically with dashboard and seek.com.au
+    asyncio.create_task(open_stealth_browser_delayed())
 
     yield
 
@@ -56,45 +59,37 @@ async def lifespan(app: FastAPI):
     logger.info("OVERLORD: Supreme driver destroyed on shutdown")
 
 
-def wait_for_server_and_open_browser(host: str, port: int):
-    """Wait for server to be ready then ask THE overlord for a browser"""
-    import socket
-    import time
-    
-    def is_server_ready():
-        try:
-            with socket.create_connection((host, port), timeout=1):
-                return True
-        except:
-            return False
-    
-    # Wait for server to be ready (max 30 seconds)
-    for _ in range(30):
-        if is_server_ready():
-            logger.info("Server is ready, requesting browser from THE overlord...")
-            try:
-                # Ask THE overlord for THE driver
-                driver = get_the_driver_sync()
-                driver.get(f"http://{host}:{port}")
-                
-                # Open seek.com.au in a new tab
-                driver.execute_script("window.open('about:blank', '_blank');")
-                driver.switch_to.window(driver.window_handles[1])
-                driver.get("https://www.seek.com.au")
-                driver.switch_to.window(driver.window_handles[0])  # Switch back to dashboard   
-                
-                logger.info("Dashboard opened in browser successfully via THE overlord")
-                return
-                
-            except Exception as e:
-                logger.error(f"Failed to get browser from THE overlord: {e}")
-                return
+async def open_stealth_browser_delayed():
+    """Open stealth Chrome browser with seek.com.au and dashboard after server is ready"""
+    await asyncio.sleep(5)  # Wait longer for server to be fully ready
+    try:
+        logger.info("Opening stealth Chrome browser with seek.com.au and dashboard...")
+        # Get THE driver from THE overlord
+        driver = get_the_driver_sync()
         
-        time.sleep(1)
-    
-    logger.error("Server failed to start within timeout")
+        # First open seek.com.au (more reliable)
+        logger.info("Opening seek.com.au...")
+        driver.get("https://www.seek.com.au")
+        logger.info("Seek.com.au opened successfully")
+        
+        # Wait a moment then open dashboard in new tab
+        await asyncio.sleep(2)
+        logger.info("Opening dashboard in new tab...")
+        driver.execute_script("window.open('http://127.0.0.1:3877', '_blank');")
+        
+        # Switch to dashboard tab
+        driver.switch_to.window(driver.window_handles[1])
+        logger.info("Dashboard opened in new tab")
+        
+        logger.info("Stealth Chrome browser setup completed successfully")
+        
+    except Exception as e:
+        logger.error(f"Failed to open stealth Chrome browser: {e}")
+        logger.info("Chrome driver is still available for manual navigation")
 
-def create_app() -> FastAPI:
+
+
+def create_app(host: str = "127.0.0.1", port: int = 3877) -> FastAPI:
     """Create FastAPI application"""
     app = FastAPI(
         title="Seek Bot Dashboard",
@@ -152,9 +147,8 @@ def create_app() -> FastAPI:
     return app
 
 
-# Create app instance
+# Create app instance at module level
 app = create_app()
-
 
 def main():
     """Run the FastAPI server"""
@@ -174,13 +168,7 @@ def main():
     logger.info(f"Starting server at http://{host}:{port}")
     logger.info("THE BROWSER OVERLORD is ready to serve")
     
-    # Start browser opener in background thread
-    browser_thread = threading.Thread(
-        target=wait_for_server_and_open_browser,
-        args=(host, port),
-        daemon=True
-    )
-    browser_thread.start()
+    # No background thread - browser will open on first dashboard access
     
     # Start FastAPI server
     uvicorn.run("api.main:app", **config)

@@ -96,6 +96,10 @@ class SeekBot:
             
             logger.info(f"Found {len(jobs)} jobs matching criteria")
             
+            # Save jobs to storage for dashboard display
+            self.storage.save_jobs(jobs)
+            logger.info(f"Saved {len(jobs)} jobs to storage")
+            
             # Step 3: Apply to jobs (commented out for now)
             # self.current_task = "applying"
             # applied_count = await self.applicator.apply_to_jobs(jobs)

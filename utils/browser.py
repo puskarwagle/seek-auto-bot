@@ -97,9 +97,8 @@ class BrowserManager:
 
         except Exception as e:
             logger.warning(f"OVERLORD: Driver health check failed: {e}")
-            # If the health check fails, the driver is not alive, regardless of lock-in status.
-            self._driver = None
-            self._driver_locked_in = False # Also reset locked-in status if driver truly died
+            # Health check failure doesn't mean driver is dead - could be temporary/threading issue
+            # Don't reset lock-in status - preserve "ONE TIME ONLY" policy
             return False
 
     def has_driver(self) -> bool:
