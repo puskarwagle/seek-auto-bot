@@ -61,7 +61,7 @@ function seekBot() {
             await this.loadConfig();
             await this.refreshStatus();
             await this.loadData();
-            setInterval(() => this.refreshStatus(), 10000); // Refresh every 10s
+            setInterval(() => this.refreshStatus(), 300000); // Refresh every 5 minutes
         },
 
         // Load current config from backend

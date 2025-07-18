@@ -4,14 +4,14 @@ from utils.logging import logger
 from utils.storage import JSONStorage
 from utils.errors import SeekBotError, handle_critical_error
 from core.auth import SeekAuth
-# from core.scraper import SeekScraper
+from core.scraper import SeekScraper
 # from core.applicator import JobApplicator
 
 class SeekBot:
     def __init__(self):
         self.storage = JSONStorage()
         self.auth = SeekAuth()
-        # self.scraper = SeekScraper()
+        self.scraper = SeekScraper()
         # self.applicator = JobApplicator()
         self.running = False
         self.current_task = "idle"

@@ -122,7 +122,7 @@ def handle_critical_error(error: Exception, context: str = "Unknown context"):
     try:
         from utils.storage import JSONStorage
         storage = JSONStorage()
-        storage.log_error(error_data)
+        storage.save_log(error_data)
     except Exception as storage_error:
         logger.error(f"Failed to store error log: {storage_error}")
 

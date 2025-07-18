@@ -1,4 +1,4 @@
-#utils/browser.py
+# utils/browser.py
 """
 Browser Management Module
 Handles Selenium WebDriver setup with anti-detection
@@ -19,13 +19,50 @@ from utils.logging import logger
 from utils.errors import BrowserError
 
 class BrowserManager:
+    _instance = None
+    _driver = None
+    _lock = asyncio.Lock()
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(BrowserManager, cls).__new__(cls)
+        return cls._instance
+    
     def __init__(self):
-        self.driver_path = None
-        self.user_data_dir = Path.home() / ".seek_bot" / "chrome_profile"
-        self.user_data_dir.mkdir(parents=True, exist_ok=True)
+        if not hasattr(self, '_initialized'):
+            self.driver_path = None
+            self.user_data_dir = Path.home() / ".seek_bot" / "chrome_profile"
+            self.user_data_dir.mkdir(parents=True, exist_ok=True)
+            self._initialized = True
+    
+    async def get_driver(self) -> webdriver.Chrome:
+        """Get existing driver or create new one (singleton)"""
+        async with self._lock:
+            if self._driver is None:
+                logger.warning("No existing driver found, creating new one")
+                self._driver = await self._create_driver()
+            else:
+                logger.info("Using existing driver instance")
+            return self._driver
+    
+    def has_driver(self) -> bool:
+        """Check if driver exists"""
+        return self._driver is not None
+    
+    def get_driver_sync(self) -> webdriver.Chrome:
+        """Synchronous version to get existing driver"""
+        return self._driver
+    
+    def set_driver(self, driver: webdriver.Chrome):
+        """Set driver instance (for external creation)"""
+        self._driver = driver
         
     async def create_driver(self) -> webdriver.Chrome:
         """Create Chrome driver with anti-detection setup"""
+        return await self.get_driver()
+    
+    async def _create_driver(self) -> webdriver.Chrome:
+        """Internal method to create Chrome driver with anti-detection setup"""
         try:
             logger.info("Creating Chrome driver with stealth mode...")
             
@@ -175,39 +212,51 @@ class BrowserManager:
         except Exception as e:
             logger.warning(f"Driver stealth application failed: {e}")
     
-    async def close_driver(self, driver: webdriver.Chrome):
+    async def close_driver(self, driver: Optional[webdriver.Chrome] = None):
         """Safely close the driver"""
-        try:
-            if driver:
-                logger.info("Closing Chrome driver...")
-                driver.quit()
-                logger.info("Chrome driver closed successfully")
-        except Exception as e:
-            logger.error(f"Error closing driver: {e}")
+        async with self._lock:
+            try:
+                target_driver = driver or self._driver
+                if target_driver:
+                    logger.info("Closing Chrome driver...")
+                    target_driver.quit()
+                    if target_driver is self._driver:
+                        self._driver = None
+                    logger.info("Chrome driver closed successfully")
+            except Exception as e:
+                logger.error(f"Error closing driver: {e}")
     
-    async def get_driver_status(self, driver: webdriver.Chrome) -> dict:
+    async def get_driver_status(self, driver: Optional[webdriver.Chrome] = None) -> dict:
         """Get driver status information"""
         try:
+            target_driver = driver or self._driver
+            if not target_driver:
+                return {"error": "No driver available"}
+                
             return {
-                "session_id": driver.session_id,
-                "current_url": driver.current_url,
-                "title": driver.title,
-                "window_handles": len(driver.window_handles),
-                "page_source_length": len(driver.page_source)
+                "session_id": target_driver.session_id,
+                "current_url": target_driver.current_url,
+                "title": target_driver.title,
+                "window_handles": len(target_driver.window_handles),
+                "page_source_length": len(target_driver.page_source)
             }
         except Exception as e:
             logger.error(f"Error getting driver status: {e}")
             return {"error": str(e)}
     
-    async def refresh_driver(self, driver: webdriver.Chrome):
+    async def refresh_driver(self, driver: Optional[webdriver.Chrome] = None):
         """Refresh driver to avoid detection"""
         try:
+            target_driver = driver or self._driver
+            if not target_driver:
+                raise BrowserError("No driver available to refresh")
+                
             # Clear cookies and cache
-            driver.delete_all_cookies()
+            target_driver.delete_all_cookies()
             
             # Execute cache clearing script
-            driver.execute_script("window.localStorage.clear();")
-            driver.execute_script("window.sessionStorage.clear();")
+            target_driver.execute_script("window.localStorage.clear();")
+            target_driver.execute_script("window.sessionStorage.clear();")
             
             # Random delay
             await asyncio.sleep(random.uniform(1, 3))

@@ -1,4 +1,4 @@
-# aoi/main.py
+# api/main.py
 """
 FastAPI Server for Seek Bot Dashboard
 Main application entry point
@@ -30,7 +30,7 @@ from api.routes import router
 
 # Global instances
 bot_instance = None
-dashboard_driver = None
+browser_manager = BrowserManager()  # Singleton instance
 
 
 @asynccontextmanager
@@ -47,16 +47,13 @@ async def lifespan(app: FastAPI):
 
     # Cleanup on shutdown
     logger.info("Shutting down Seek Bot Dashboard...")
-    global bot_instance, dashboard_driver
+    global bot_instance
     
     if bot_instance and bot_instance.running:
         await bot_instance.stop()
     
-    if dashboard_driver:
-        try:
-            dashboard_driver.quit()
-        except:
-            pass
+    # Close browser using singleton manager
+    await browser_manager.close_driver()
 
 
 def wait_for_server_and_open_browser(host: str, port: int):
@@ -76,12 +73,12 @@ def wait_for_server_and_open_browser(host: str, port: int):
         if is_server_ready():
             logger.info("Server is ready, opening browser...")
             try:
-                # Create browser and open dashboard
-                browser_manager = BrowserManager()
+                # Create browser using singleton manager
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 
-                driver = loop.run_until_complete(browser_manager.create_driver())
+                # Get driver through singleton
+                driver = loop.run_until_complete(browser_manager.get_driver())
                 driver.get(f"http://{host}:{port}")
                 
                 # Open seek.com.au in a new tab using Selenium's native method
@@ -89,10 +86,6 @@ def wait_for_server_and_open_browser(host: str, port: int):
                 driver.switch_to.window(driver.window_handles[1])
                 driver.get("https://www.seek.com.au")
                 driver.switch_to.window(driver.window_handles[0])  # Switch back to dashboard   
-
-                # Store global reference
-                global dashboard_driver
-                dashboard_driver = driver
                 
                 logger.info("Dashboard opened in browser successfully")
                 return
