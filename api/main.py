@@ -1,7 +1,7 @@
-# api/main.py
+# api/main.py - SERVANT TO THE BROWSER OVERLORD
 """
 FastAPI Server for Seek Bot Dashboard
-Main application entry point
+Now serves THE supreme browser overlord
 """
 
 import asyncio
@@ -24,13 +24,12 @@ sys.path.append(str(Path(__file__).parent.parent))
 from utils.logging import setup_logging, logger
 from utils.storage import JSONStorage
 from utils.errors import SeekBotError
-from utils.browser import BrowserManager
+from utils.browser import SUPREME_BROWSER_OVERLORD, get_the_driver_sync
 from api.routes import router
 
 
 # Global instances
 bot_instance = None
-browser_manager = BrowserManager()  # Singleton instance
 
 
 @asynccontextmanager
@@ -52,12 +51,13 @@ async def lifespan(app: FastAPI):
     if bot_instance and bot_instance.running:
         await bot_instance.stop()
     
-    # Close browser using singleton manager
-    await browser_manager.close_driver()
+    # Destroy THE driver through THE overlord
+    await SUPREME_BROWSER_OVERLORD.destroy_driver()
+    logger.info("OVERLORD: Supreme driver destroyed on shutdown")
 
 
 def wait_for_server_and_open_browser(host: str, port: int):
-    """Wait for server to be ready then open browser"""
+    """Wait for server to be ready then ask THE overlord for a browser"""
     import socket
     import time
     
@@ -71,27 +71,23 @@ def wait_for_server_and_open_browser(host: str, port: int):
     # Wait for server to be ready (max 30 seconds)
     for _ in range(30):
         if is_server_ready():
-            logger.info("Server is ready, opening browser...")
+            logger.info("Server is ready, requesting browser from THE overlord...")
             try:
-                # Create browser using singleton manager
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                
-                # Get driver through singleton
-                driver = loop.run_until_complete(browser_manager.get_driver())
+                # Ask THE overlord for THE driver
+                driver = get_the_driver_sync()
                 driver.get(f"http://{host}:{port}")
                 
-                # Open seek.com.au in a new tab using Selenium's native method
+                # Open seek.com.au in a new tab
                 driver.execute_script("window.open('about:blank', '_blank');")
                 driver.switch_to.window(driver.window_handles[1])
                 driver.get("https://www.seek.com.au")
                 driver.switch_to.window(driver.window_handles[0])  # Switch back to dashboard   
                 
-                logger.info("Dashboard opened in browser successfully")
+                logger.info("Dashboard opened in browser successfully via THE overlord")
                 return
                 
             except Exception as e:
-                logger.error(f"Failed to open browser: {e}")
+                logger.error(f"Failed to get browser from THE overlord: {e}")
                 return
         
         time.sleep(1)
@@ -102,7 +98,7 @@ def create_app() -> FastAPI:
     """Create FastAPI application"""
     app = FastAPI(
         title="Seek Bot Dashboard",
-        description="Automated Job Application System",
+        description="Automated Job Application System - Powered by THE Browser Overlord",
         version="1.0.0",
         lifespan=lifespan
     )
@@ -129,6 +125,11 @@ def create_app() -> FastAPI:
     async def dashboard(request: Request):
         """Serve dashboard page"""
         return templates.TemplateResponse("index.html", {"request": request})
+    
+    @app.get("/api/browser-status")
+    async def browser_status():
+        """Get THE overlord's driver status"""
+        return SUPREME_BROWSER_OVERLORD.get_supreme_status()
     
     @app.exception_handler(SeekBotError)
     async def seekbot_exception_handler(request: Request, exc: SeekBotError):
@@ -171,6 +172,7 @@ def main():
     }
     
     logger.info(f"Starting server at http://{host}:{port}")
+    logger.info("THE BROWSER OVERLORD is ready to serve")
     
     # Start browser opener in background thread
     browser_thread = threading.Thread(

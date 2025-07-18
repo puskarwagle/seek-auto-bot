@@ -1,11 +1,12 @@
-# utils/browser.py
+# utils/browser.py - FIXED OVERLORD
 """
-Browser Management Module
-Handles Selenium WebDriver setup with anti-detection
+Browser Management Module - THE ONE TRUE DRIVER AUTHORITY
+Fixed driver detection and unified locking
 """
 
 import asyncio
 import random
+import threading
 from typing import Optional
 from pathlib import Path
 
@@ -18,10 +19,13 @@ import undetected_chromedriver as uc
 from utils.logging import logger
 from utils.errors import BrowserError
 
+
 class BrowserManager:
+    """THE SUPREME DRIVER OVERLORD - All drivers bow to this singleton"""
+    
     _instance = None
     _driver = None
-    _lock = asyncio.Lock()
+    _lock = threading.RLock()  # Changed to RLock for reentrant access
     
     def __new__(cls):
         if cls._instance is None:
@@ -31,247 +35,274 @@ class BrowserManager:
     def __init__(self):
         if not hasattr(self, '_initialized'):
             self.driver_path = None
+            self._driver_locked_in = False
             self.user_data_dir = Path.home() / ".seek_bot" / "chrome_profile"
             self.user_data_dir.mkdir(parents=True, exist_ok=True)
             self._initialized = True
+            logger.info("BROWSER OVERLORD INITIALIZED - Ready to rule all drivers")
     
+    # ====== UNIFIED DRIVER GETTER ======
     async def get_driver(self) -> webdriver.Chrome:
-        """Get existing driver or create new one (singleton)"""
-        async with self._lock:
-            if self._driver is None:
-                logger.warning("No existing driver found, creating new one")
-                self._driver = await self._create_driver()
-            else:
-                logger.info("Using existing driver instance")
-            return self._driver
-    
-    def has_driver(self) -> bool:
-        """Check if driver exists"""
-        return self._driver is not None
+        """THE SUPREME METHOD - Get THE driver (async)"""
+        return self._get_driver_internal()
     
     def get_driver_sync(self) -> webdriver.Chrome:
-        """Synchronous version to get existing driver"""
-        return self._driver
+        """THE SUPREME METHOD - Get THE driver (sync)"""
+        return self._get_driver_internal()
     
-    def set_driver(self, driver: webdriver.Chrome):
-        """Set driver instance (for external creation)"""
-        self._driver = driver
-        
-    async def create_driver(self) -> webdriver.Chrome:
-        """Create Chrome driver with anti-detection setup"""
-        return await self.get_driver()
+    def _get_driver_internal(self) -> Optional[webdriver.Chrome]:
+        """Internal unified driver getter with single-creation policy"""
+        with self._lock:
+            if self._driver_locked_in:
+                if self._is_driver_alive():
+                    logger.info("OVERLORD: Returning locked-in supreme driver")
+                    return self._driver
+                else:
+                    logger.warning("OVERLORD: Locked-in driver is dead. No more driver creation allowed.")
+                    return None  # Or raise an error if you want
+
+            if self._is_driver_alive():
+                logger.info("OVERLORD: Returning existing living driver (pre-lock-in)")
+                self._driver_locked_in = True
+                return self._driver
+
+            logger.info("OVERLORD: No living driver found. Creating supreme driver (ONE TIME ONLY).")
+            self._driver = self._create_supreme_driver_sync()
+            self._driver_locked_in = True  # 🔐 Lock it in!
+            return self._driver
+
     
-    async def _create_driver(self) -> webdriver.Chrome:
-        """Internal method to create Chrome driver with anti-detection setup"""
+    # ====== IMPROVED DRIVER HEALTH ORACLE ======
+    def _is_driver_alive(self) -> bool:
+        """Check if THE driver is alive and serving"""
+        if self._driver is None:
+            logger.debug("OVERLORD: No driver instance exists")
+            return False
+
         try:
-            logger.info("Creating Chrome driver with stealth mode...")
+            # Try basic health check
+            session_id = self._driver.session_id
+            current_url = self._driver.current_url
+            handles = self._driver.window_handles
+
+            if not session_id:
+                logger.debug("OVERLORD: No session ID found")
+                return False
+            if not handles:
+                logger.debug("OVERLORD: No window handles found")
+                return False
+
+            logger.debug(f"OVERLORD: Driver is alive. URL: {current_url}, Handles: {len(handles)}")
+            return True
+
+        except Exception as e:
+            logger.warning(f"OVERLORD: Driver health check failed: {e}")
+            # If the health check fails, the driver is not alive, regardless of lock-in status.
+            self._driver = None
+            self._driver_locked_in = False # Also reset locked-in status if driver truly died
+            return False
+
+    def has_driver(self) -> bool:
+        """Public method to check driver status"""
+        with self._lock:
+            return self._is_driver_alive()
+    
+    # ====== SIMPLIFIED DRIVER CREATION ======
+    def _create_supreme_driver_sync(self) -> webdriver.Chrome:
+        """Create THE supreme driver with all anti-detection powers"""
+        try:
+            logger.info("OVERLORD: Forging new supreme driver with ultimate stealth...")
             
-            # Chrome options for stealth
-            options = self._get_chrome_options()
+            # Get supreme options
+            options = self._get_supreme_options()
             
-            # Use undetected-chromedriver
+            # Create supreme driver using undetected-chromedriver
             driver = uc.Chrome(
                 options=options,
-                version_main=None,  # Auto-detect
+                version_main=None,
                 driver_executable_path=self.driver_path
             )
             
-            # Set timeouts
+            # Set supreme timeouts
             driver.implicitly_wait(10)
             driver.set_page_load_timeout(30)
             
-            # Apply additional stealth
-            await self._apply_driver_stealth(driver)
+            # Apply basic stealth synchronously
+            self._apply_basic_stealth_sync(driver)
             
-            logger.info("Chrome driver created successfully")
+            logger.info("OVERLORD: Supreme driver forged successfully")
             return driver
             
         except Exception as e:
-            raise BrowserError(f"Failed to create Chrome driver: {str(e)}")
+            logger.error(f"OVERLORD: Failed to create supreme driver: {e}")
+            raise BrowserError(f"Supreme driver creation failed: {str(e)}")
     
-    def _get_chrome_options(self) -> Options:
-        """Configure Chrome options for stealth"""
+    # ====== SUPREME OPTIONS CONFIGURATION ======
+    def _get_supreme_options(self) -> Options:
+        """Configure supreme Chrome options for ultimate stealth"""
         options = Options()
         
-        # Basic stealth options
+        # Supreme stealth options
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-blink-features=AutomationControlled')
-        # options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        # options.add_experimental_option('useAutomationExtension', False)
         
-        # Performance options
+        # Performance supremacy
         options.add_argument('--disable-background-timer-throttling')
         options.add_argument('--disable-backgrounding-occluded-windows')
         options.add_argument('--disable-renderer-backgrounding')
         options.add_argument('--disable-features=TranslateUI')
         options.add_argument('--disable-ipc-flooding-protection')
         
-        # Privacy options
+        # Privacy supremacy
         options.add_argument('--disable-web-security')
         options.add_argument('--disable-features=VizDisplayCompositor')
         options.add_argument('--disable-default-apps')
         options.add_argument('--disable-extensions')
         options.add_argument('--disable-popup-blocking')
         
-        # User agent and language
-        user_agent = self._get_random_user_agent()
+        # Supreme user agent
+        user_agent = self._get_supreme_user_agent()
         options.add_argument(f'--user-agent={user_agent}')
         options.add_argument('--lang=en-US,en')
         
-        # Window size randomization
+        # Supreme window size
         width = random.randint(1200, 1920)
         height = random.randint(800, 1080)
         options.add_argument(f'--window-size={width},{height}')
         
-        # Persistent profile
+        # Supreme persistent profile
         options.add_argument(f'--user-data-dir={self.user_data_dir}')
         options.add_argument('--profile-directory=Default')
         
-        # Memory and performance
+        # Supreme performance
         options.add_argument('--memory-pressure-off')
         options.add_argument('--max_old_space_size=4096')
         
-        # Disable logging
+        # Supreme silence
         options.add_argument('--disable-logging')
         options.add_argument('--log-level=3')
         options.add_argument('--silent')
         
         return options
     
-    def _get_random_user_agent(self) -> str:
-        """Get random realistic user agent"""
-        user_agents = [
+    def _get_supreme_user_agent(self) -> str:
+        """Get supreme realistic user agent"""
+        supreme_agents = [
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
         ]
-        return random.choice(user_agents)
+        return random.choice(supreme_agents)
     
-    async def _apply_driver_stealth(self, driver: webdriver.Chrome):
-        """Apply additional stealth techniques to driver"""
+    # ====== BASIC STEALTH POWERS ======
+    def _apply_basic_stealth_sync(self, driver: webdriver.Chrome):
+        """Apply basic stealth synchronously"""
         try:
-            # Execute stealth scripts
-            stealth_scripts = [
-                # Remove webdriver property
+            basic_scripts = [
                 "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})",
-                
-                # Override chrome property
                 "Object.defineProperty(navigator, 'chrome', {get: () => ({runtime: {}})})",
-                
-                # Override permissions
-                """
-                Object.defineProperty(navigator, 'permissions', {
-                    get: () => ({
-                        query: (parameters) => (
-                            parameters.name === 'notifications' ?
-                            Promise.resolve({state: Notification.permission}) :
-                            Promise.resolve({state: 'granted'})
-                        )
-                    })
-                });
-                """,
-                
-                # Override plugins
-                """
-                Object.defineProperty(navigator, 'plugins', {
-                    get: () => ([
-                        {
-                            0: {type: "application/x-google-chrome-pdf", suffixes: "pdf", description: "Portable Document Format", filename: "internal-pdf-viewer"},
-                            description: "Portable Document Format",
-                            filename: "internal-pdf-viewer",
-                            length: 1,
-                            name: "Chrome PDF Plugin"
-                        }
-                    ])
-                });
-                """,
-                
-                # Override language
                 "Object.defineProperty(navigator, 'language', {get: () => 'en-US'})",
-                "Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']})",
             ]
             
-            for script in stealth_scripts:
+            for script in basic_scripts:
                 try:
                     driver.execute_script(script)
+                except Exception:
+                    pass
+                    
+        except Exception as e:
+            logger.warning(f"OVERLORD: Basic stealth failed: {e}")
+    
+    # ====== SUPREME DESTRUCTION POWERS ======
+    async def destroy_driver(self):
+        """Destroy THE driver when overlord commands it"""
+        self._destroy_driver_internal()
+    
+    def destroy_driver_sync(self):
+        """Synchronous version of driver destruction"""
+        self._destroy_driver_internal()
+    
+    def _destroy_driver_internal(self):
+        """Internal unified driver destruction"""
+        with self._lock:
+            if self._driver:
+                try:
+                    logger.info("OVERLORD: Destroying supreme driver...")
+                    self._driver.quit()
+                    self._driver = None
+                    logger.info("OVERLORD: Supreme driver destroyed successfully")
                 except Exception as e:
-                    logger.warning(f"Stealth script failed: {e}")
-            
-            # Set realistic screen properties
-            screen_script = f"""
-            Object.defineProperty(screen, 'width', {{get: () => {random.randint(1200, 1920)}}});
-            Object.defineProperty(screen, 'height', {{get: () => {random.randint(800, 1080)}}});
-            Object.defineProperty(screen, 'availWidth', {{get: () => screen.width}});
-            Object.defineProperty(screen, 'availHeight', {{get: () => screen.height - 40}});
-            """
-            driver.execute_script(screen_script)
-            
-        except Exception as e:
-            logger.warning(f"Driver stealth application failed: {e}")
+                    logger.error(f"OVERLORD: Error destroying driver: {e}")
+                    self._driver = None
     
-    async def close_driver(self, driver: Optional[webdriver.Chrome] = None):
-        """Safely close the driver"""
-        async with self._lock:
+    # ====== SUPREME STATUS REPORTING ======
+    def get_supreme_status(self) -> dict:
+        """Get status of THE supreme driver"""
+        with self._lock:
             try:
-                target_driver = driver or self._driver
-                if target_driver:
-                    logger.info("Closing Chrome driver...")
-                    target_driver.quit()
-                    if target_driver is self._driver:
-                        self._driver = None
-                    logger.info("Chrome driver closed successfully")
+                if not self._is_driver_alive():
+                    return {
+                        "status": "NO_DRIVER",
+                        "alive": False,
+                        "message": "No living driver under overlord control"
+                    }
+                    
+                return {
+                    "status": "SUPREME_DRIVER_ACTIVE",
+                    "alive": True,
+                    "session_id": self._driver.session_id,
+                    "current_url": self._driver.current_url,
+                    "title": self._driver.title,
+                    "window_handles": len(self._driver.window_handles),
+                    "message": "Supreme driver serving faithfully"
+                }
             except Exception as e:
-                logger.error(f"Error closing driver: {e}")
+                return {
+                    "status": "ERROR",
+                    "alive": False,
+                    "error": str(e),
+                    "message": "Error checking supreme driver status"
+                }
     
-    async def get_driver_status(self, driver: Optional[webdriver.Chrome] = None) -> dict:
-        """Get driver status information"""
-        try:
-            target_driver = driver or self._driver
-            if not target_driver:
-                return {"error": "No driver available"}
-                
-            return {
-                "session_id": target_driver.session_id,
-                "current_url": target_driver.current_url,
-                "title": target_driver.title,
-                "window_handles": len(target_driver.window_handles),
-                "page_source_length": len(target_driver.page_source)
-            }
-        except Exception as e:
-            logger.error(f"Error getting driver status: {e}")
-            return {"error": str(e)}
+    # ====== SUPREME RECOVERY POWERS ======
+    async def recover_driver(self):
+        """Force recovery of THE driver"""
+        logger.info("OVERLORD: Initiating supreme driver recovery...")
+        await self.destroy_driver()
+        new_driver = await self.get_driver()
+        logger.info("OVERLORD: Supreme driver recovery completed")
+        return new_driver
     
-    async def refresh_driver(self, driver: Optional[webdriver.Chrome] = None):
-        """Refresh driver to avoid detection"""
-        try:
-            target_driver = driver or self._driver
-            if not target_driver:
-                raise BrowserError("No driver available to refresh")
-                
-            # Clear cookies and cache
-            target_driver.delete_all_cookies()
-            
-            # Execute cache clearing script
-            target_driver.execute_script("window.localStorage.clear();")
-            target_driver.execute_script("window.sessionStorage.clear();")
-            
-            # Random delay
-            await asyncio.sleep(random.uniform(1, 3))
-            
-            logger.info("Driver refreshed successfully")
-            
-        except Exception as e:
-            logger.error(f"Driver refresh failed: {e}")
-            raise BrowserError(f"Failed to refresh driver: {str(e)}")
-    
+    # ====== SUPREME CONFIGURATION ======
     def set_driver_path(self, path: str):
-        """Set custom ChromeDriver path"""
+        """Set path for supreme driver executable"""
         self.driver_path = path
-        logger.info(f"ChromeDriver path set to: {path}")
+        logger.info(f"OVERLORD: Supreme driver path set to: {path}")
     
     def get_user_data_dir(self) -> Path:
-        """Get Chrome user data directory"""
+        """Get supreme Chrome user data directory"""
         return self.user_data_dir
+
+
+# ====== THE SUPREME SINGLETON INSTANCE ======
+SUPREME_BROWSER_OVERLORD = BrowserManager()
+
+
+# ====== CONVENIENCE FUNCTIONS FOR SERVANTS ======
+async def get_the_driver() -> webdriver.Chrome:
+    """Get THE driver from THE overlord"""
+    return await SUPREME_BROWSER_OVERLORD.get_driver()
+
+def get_the_driver_sync() -> webdriver.Chrome:
+    """Get THE driver from THE overlord (synchronous)"""
+    return SUPREME_BROWSER_OVERLORD.get_driver_sync()
+
+async def destroy_the_driver():
+    """Destroy THE driver through THE overlord"""
+    await SUPREME_BROWSER_OVERLORD.destroy_driver()
+
+def check_driver_status() -> dict:
+    """Check THE driver status through THE overlord"""
+    return SUPREME_BROWSER_OVERLORD.get_supreme_status()

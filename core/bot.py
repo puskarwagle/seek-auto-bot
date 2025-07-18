@@ -1,62 +1,91 @@
-# core/bot.py (FIXED)
+# core/bot.py - SERVANT TO THE BROWSER OVERLORD
+"""
+Seek Bot Core - Now serves THE supreme browser overlord
+"""
+
 import asyncio
 from utils.logging import logger
 from utils.storage import JSONStorage
 from utils.errors import SeekBotError, handle_critical_error
-from utils.browser import BrowserManager
+from utils.browser import SUPREME_BROWSER_OVERLORD, get_the_driver
 from core.auth import SeekAuth
 from core.scraper import SeekScraper
 
+
 class SeekBot:
+    """Seek Bot - Humble servant to THE browser overlord"""
+    
     def __init__(self):
         self.storage = JSONStorage()
-        self.browser_manager = BrowserManager()  # Singleton
-        self.auth = SeekAuth(self.browser_manager)
-        self.scraper = SeekScraper(self.browser_manager)
+        # No longer create our own browser manager - we serve THE overlord
+        self.auth = SeekAuth()  # Remove browser_manager parameter
+        self.scraper = SeekScraper()  # Remove browser_manager parameter
         self.running = False
         self.current_task = "idle"
-
+        self.driver = None  # Will be provided by THE overlord
+    
     async def initialize(self) -> bool:
+        """Initialize bot and validate configuration"""
         try:
             logger.info("Initializing Seek Bot...")
             config = self.storage.load_config()
             if not config:
                 raise SeekBotError("No configuration found. Please configure via the dashboard.")
-
+            
             required_fields = ["user.email", "user.password", "user.agreement_accepted"]
             for field in required_fields:
                 if not self._get_nested_value(config, field):
                     raise SeekBotError(f"Missing required field: {field}")
-
+            
             if not config["user"]["agreement_accepted"]:
                 raise SeekBotError("User agreement not accepted. Cannot proceed.")
-
+            
             logger.info("Configuration validated successfully")
             return True
-
+            
         except Exception as e:
             handle_critical_error(e, "Bot initialization failed")
             return False
-
+    
     def _get_nested_value(self, obj: dict, path: str):
+        """Get nested dictionary value by dot notation"""
         keys = path.split(".")
         for key in keys:
             if not isinstance(obj, dict) or key not in obj:
                 raise KeyError(f"Missing config key '{key}' in path '{path}'")
             obj = obj[key]
         return obj
-
+    
     async def start(self) -> bool:
+        """Start bot execution - now serves THE overlord"""
         if not await self.initialize():
             return False
-
+        
         self.running = True
         try:
             logger.info("Starting Seek Bot execution...")
-
+            
+            # Request THE driver from THE overlord
+            logger.info("Requesting THE driver from THE supreme overlord...")
+            self.driver = await get_the_driver()
+            
+            # Check overlord status
+            status = SUPREME_BROWSER_OVERLORD.get_supreme_status()
+            if status["alive"]:
+                logger.info(f"OVERLORD STATUS: {status['message']}")
+                logger.info(f"Current URL: {status.get('current_url', 'unknown')}")
+                logger.info(f"Session ID: {status.get('session_id', 'unknown')}")
+            else:
+                logger.error(f"OVERLORD STATUS: {status['message']}")
+                return False
+            
+            # Pass THE driver to our servants
+            self.auth.set_driver(self.driver)
+            self.scraper.set_driver(self.driver)
+            
             # Step 1: Skip auth
             logger.info("Skipping authentication — user handles login manually.")
-
+            
             # Step 2: Scrape jobs
             self.current_task = "scraping"
             jobs = await self.scraper.scrape_jobs()
@@ -64,42 +93,41 @@ class SeekBot:
                 logger.warning("No jobs found matching criteria")
                 self.current_task = "idle"
                 return True
-
+            
             logger.info(f"Found {len(jobs)} jobs matching criteria")
-
+            
             # Step 3: Apply to jobs (commented out for now)
             # self.current_task = "applying"
             # applied_count = await self.applicator.apply_to_jobs(jobs)
             # logger.info(f"Applied to {applied_count} jobs successfully")
             
             self.current_task = "completed"
+            logger.info("Bot execution completed successfully")
             return True
-
+            
         except Exception as e:
             handle_critical_error(e, "Bot execution failed")
             return False
-
         finally:
             self.running = False
             self.current_task = "idle"
-            await self.cleanup()
-
+            # DON'T destroy THE driver - THE overlord manages it
+            logger.info("Bot execution finished - THE driver remains with THE overlord")
+    
     async def stop(self):
+        """Stop bot execution"""
         logger.info("Stopping Seek Bot...")
         self.running = False
-        await self.cleanup()
-
-    async def cleanup(self):
-        try:
-            await self.auth.logout()
-            await self.scraper.close()
-            logger.info("Cleanup completed")
-        except Exception as e:
-            logger.error(f"Cleanup error: {e}")
-
+        # DON'T destroy THE driver - THE overlord manages it
+        logger.info("Bot stopped - THE driver remains with THE overlord")
+    
     def get_status(self) -> dict:
+        """Get bot status"""
+        overlord_status = SUPREME_BROWSER_OVERLORD.get_supreme_status()
         return {
             "running": self.running,
             "current_task": self.current_task,
-            "timestamp": self.storage.get_timestamp()
+            "timestamp": self.storage.get_timestamp(),
+            "overlord_status": overlord_status["status"],
+            "driver_alive": overlord_status["alive"]
         }
