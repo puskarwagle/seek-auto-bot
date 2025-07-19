@@ -2,9 +2,10 @@
   "jobs": [
     {
       "message": "Search completed successfully",
-      "search_term": "python developer"
+      "search_term": "potter",
+      "location": "Melbourne"
     }
   ],
   "total_count": 1,
-  "last_updated": "2025-07-19T10:34:57.976884"
+  "last_updated": "2025-07-19T11:04:48.579490"
 }

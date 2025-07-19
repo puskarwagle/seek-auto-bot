@@ -1,11 +1,26 @@
 # scraper.py - NO MORE FREE WILL
 
+import json
+import os
 from utils.browser import get_the_driver, check_driver_status
 from utils.logging import logger
 
 class SeekScraper:
     def __init__(self):
         self.driver = None  # must exist
+        self.config = self._load_config()
+    
+    def _load_config(self):
+        """Load configuration from settings.json"""
+        try:
+            config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'settings.json')
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            logger.info("✅ Configuration loaded successfully")
+            return config
+        except Exception as e:
+            logger.error(f"❌ Failed to load config: {e}")
+            return {}
 
     def set_driver(self, driver):
         self.driver = driver
@@ -64,9 +79,12 @@ class SeekScraper:
                         continue
 
                 if keywords_input:
-                    # Clear any existing text and type "python developer"
+                    # Get search terms from config
+                    keywords = self.config.get('job_preferences', {}).get('keywords', ['python'])
+                    search_term = ' '.join(keywords)
+                    
+                    # Clear any existing text and type configured keywords
                     keywords_input.clear()
-                    search_term = "python developer"
                     keywords_input.send_keys(search_term)
                     logger.info(f"✅ Typed '{search_term}' into keywords input")
                     
@@ -91,9 +109,13 @@ class SeekScraper:
                             continue
 
                     if location_input:
+                        # Get location from config
+                        locations = self.config.get('job_preferences', {}).get('locations', ['Sydney'])
+                        primary_location = locations[0] if locations else 'Sydney'
+                        
                         location_input.clear()
-                        location_input.send_keys("Sydney")
-                        logger.info("✅ Typed 'Sydney' into location input")
+                        location_input.send_keys(primary_location)
+                        logger.info(f"✅ Typed '{primary_location}' into location input")
                         time.sleep(1)
                     else:
                         logger.error("❌ Location input not found")
@@ -107,7 +129,7 @@ class SeekScraper:
                     time.sleep(5)
                     logger.info(f"✅ Search completed, current URL: {driver.current_url}")
                     
-                    return [{"message": "Search completed successfully", "search_term": search_term, "location": "Sydney"}]
+                    return [{"message": "Search completed successfully", "search_term": search_term, "location": primary_location}]
                 else:
                     logger.error("❌ Could not find keywords input field")
                     return []
