@@ -4,18 +4,79 @@
     "agreement_timestamp": "2025-01-15T10:30:00Z"
   },
   "job_preferences": {
-    "keywords": ["python", "backend", "api"],
-    "locations": ["Sydney", "Melbourne", "Remote"],
+    "keywords": [
+      "python",
+      "backend",
+      "api"
+    ],
+    "excluded_keywords": [
+      "php",
+      "wordpress",
+      "junior"
+    ],
+    "locations": [
+      "Sydney",
+      "Melbourne",
+      "Remote"
+    ],
     "salary_min": 80000,
     "salary_max": 150000,
-    "job_types": ["full-time", "contract"],
-    "experience_levels": ["mid", "senior"]
+    "job_types": [
+      "full-time",
+      "contract"
+    ],
+    "experience_levels": [
+      "mid",
+      "senior"
+    ],
+    "industries": [
+      "fintech",
+      "saas",
+      "healthcare"
+    ],
+    "company_size": [
+      "startup",
+      "medium",
+      "enterprise"
+    ],
+    "remote_preference": "hybrid_ok",
+    "visa_sponsorship": false,
+    "minimum_rating": 3.5
   },
   "application_settings": {
     "auto_apply": true,
     "max_applications_per_day": 1,
     "cover_letter_template": "template text here",
-    "cv_path": "/path/to/cv.pdf"
+    "cv_path": "/path/to/cv.pdf",
+    "apply_to_agencies": false,
+    "skip_assessment_required": true,
+    "minimum_job_age_days": 1,
+    "maximum_job_age_days": 7,
+    "preferred_application_times": [
+      "09:00",
+      "17:00"
+    ]
+  },
+  "filters": {
+    "excluded_companies": [
+      "wipro",
+      "infosys",
+      "tcs"
+    ],
+    "required_benefits": [
+      "health_insurance",
+      "super"
+    ],
+    "avoid_unpaid_trials": true,
+    "minimum_description_length": 100,
+    "require_salary_disclosed": false
+  },
+  "smart_matching": {
+    "skill_weight": 0.4,
+    "location_weight": 0.2,
+    "salary_weight": 0.3,
+    "company_weight": 0.1,
+    "auto_learn_preferences": true
   },
   "deepseek_api": {
     "api_key": "your_key_here",

@@ -42,6 +42,7 @@ logs/
 data/*.json
 data/*.csv
 data/logs.json
+data/resume*
 notes.txt
 data/encryption.key
 current.txt

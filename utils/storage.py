@@ -141,24 +141,47 @@ class JSONStorage:
         """Create default configuration"""
         default_config = {
             "user": {
-                "email": "",
-                "password": "",
                 "agreement_accepted": False,
                 "agreement_timestamp": None
             },
             "job_preferences": {
                 "keywords": [],
+                "excluded_keywords": [],
                 "locations": [],
                 "salary_min": 0,
                 "salary_max": 0,
                 "job_types": [],
-                "experience_levels": []
+                "experience_levels": [],
+                "industries": [],
+                "company_size": [],
+                "remote_preference": "any",
+                "visa_sponsorship": False,
+                "minimum_rating": 3.5
             },
             "application_settings": {
                 "auto_apply": False,
-                "max_applications_per_day": 10,
+                "max_applications_per_day": 1,
                 "cover_letter_template": "",
-                "cv_path": ""
+                "cv_path": "",
+                "apply_to_agencies": False,
+                "skip_assessment_required": True,
+                "minimum_job_age_days": 1,
+                "maximum_job_age_days": 7,
+                "preferred_application_times": []
+            },
+            "filters": {
+                "excluded_companies": [],
+                "required_benefits": [],
+                "avoid_unpaid_trials": True,
+                "minimum_description_length": 100,
+                "require_salary_disclosed": False
+            },
+            "smart_matching": {
+                "skill_weight": 0.4,
+                "location_weight": 0.2,
+                "salary_weight": 0.3,
+                "company_weight": 0.1,
+                "auto_learn_preferences": True
             },
             "deepseek_api": {
                 "api_key": "",
@@ -366,6 +389,41 @@ class JSONStorage:
             
         except Exception as e:
             logger.error(f"Failed to clear logs: {e}")
+            return False
+    
+    def clear_jobs(self) -> bool:
+        """Clear all scraped jobs"""
+        try:
+            self._create_empty_jobs_file()
+            logger.info("Jobs cleared successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to clear jobs: {e}")
+            return False
+    
+    def clear_applied_jobs(self) -> bool:
+        """Clear all applied jobs"""
+        try:
+            self._create_empty_applied_file()
+            logger.info("Applied jobs cleared successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to clear applied jobs: {e}")
+            return False
+    
+    def clear_all_data(self) -> bool:
+        """Clear all data files"""
+        try:
+            self.clear_jobs()
+            self.clear_applied_jobs()
+            self.clear_logs()
+            logger.info("All data cleared successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to clear all data: {e}")
             return False
     
     def backup_data(self) -> bool:

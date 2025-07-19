@@ -34,7 +34,7 @@ class SeekScraper:
             # Wait for page to load
             import time
             time.sleep(3)
-            logger.info("✅ Page loaded, looking for keywords input...")
+            logger.info("✅ Page loaded, looking for search inputs...")
 
             # Find the keywords input field
             from selenium.webdriver.common.by import By
@@ -70,8 +70,33 @@ class SeekScraper:
                     keywords_input.send_keys(search_term)
                     logger.info(f"✅ Typed '{search_term}' into keywords input")
                     
-                    # Wait a moment to see the typing
-                    time.sleep(2)
+                    # Wait a moment
+                    time.sleep(1)
+
+                    # Find and fill the location input
+                    location_selectors = [
+                        '#SearchBar*_Where',
+                        'input[name="where"]',
+                        'input[placeholder*="suburb"]',
+                        'input[data-automation="SearchBar__Where"]'
+                    ]
+
+                    location_input = None
+                    for selector in location_selectors:
+                        try:
+                            location_input = driver.find_element(By.CSS_SELECTOR, selector)
+                            logger.info(f"✅ Found location input: {selector}")
+                            break
+                        except:
+                            continue
+
+                    if location_input:
+                        location_input.clear()
+                        location_input.send_keys("Sydney")
+                        logger.info("✅ Typed 'Sydney' into location input")
+                        time.sleep(1)
+                    else:
+                        logger.error("❌ Location input not found")
                     
                     # Try to press Enter or find search button
                     from selenium.webdriver.common.keys import Keys
@@ -82,13 +107,13 @@ class SeekScraper:
                     time.sleep(5)
                     logger.info(f"✅ Search completed, current URL: {driver.current_url}")
                     
-                    return [{"message": "Search completed successfully", "search_term": search_term}]
+                    return [{"message": "Search completed successfully", "search_term": search_term, "location": "Sydney"}]
                 else:
                     logger.error("❌ Could not find keywords input field")
                     return []
 
             except Exception as e:
-                logger.error(f"❌ Error finding/using keywords input: {e}")
+                logger.error(f"❌ Error finding/using search inputs: {e}")
                 return []
 
         except Exception as e:

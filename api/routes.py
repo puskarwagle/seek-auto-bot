@@ -9,8 +9,10 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File
 from pydantic import BaseModel, Field
+import os
+import uuid
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
@@ -29,23 +31,47 @@ router = APIRouter()
 # Pydantic models
 class ConfigModel(BaseModel):
     """User configuration model"""
-    email: str = Field(..., description="Seek account email")
-    password: str = Field(..., description="Seek account password")
+    # User settings
     agreement_accepted: bool = Field(False, description="Terms agreement")
     
     # Job preferences
     keywords: list[str] = Field(default=[], description="Job search keywords")
+    excluded_keywords: list[str] = Field(default=[], description="Keywords to exclude")
     locations: list[str] = Field(default=[], description="Preferred locations")
     salary_min: Optional[int] = Field(None, description="Minimum salary")
     salary_max: Optional[int] = Field(None, description="Maximum salary")
     job_types: list[str] = Field(default=[], description="Job types")
     experience_levels: list[str] = Field(default=[], description="Experience levels")
+    industries: list[str] = Field(default=[], description="Preferred industries")
+    company_size: list[str] = Field(default=[], description="Company size preferences")
+    remote_preference: str = Field("any", description="Remote work preference")
+    visa_sponsorship: bool = Field(False, description="Requires visa sponsorship")
+    minimum_rating: float = Field(3.5, description="Minimum company rating")
     
     # Application settings
     auto_apply: bool = Field(True, description="Auto-apply to jobs")
-    max_applications_per_day: int = Field(20, description="Daily application limit")
+    max_applications_per_day: int = Field(1, description="Daily application limit")
     cover_letter_template: str = Field("", description="Cover letter template")
     cv_path: str = Field("", description="CV file path")
+    apply_to_agencies: bool = Field(False, description="Apply to recruitment agencies")
+    skip_assessment_required: bool = Field(True, description="Skip jobs requiring assessments")
+    minimum_job_age_days: int = Field(1, description="Minimum job age in days")
+    maximum_job_age_days: int = Field(7, description="Maximum job age in days")
+    preferred_application_times: list[str] = Field(default=[], description="Preferred application times")
+    
+    # Filters
+    excluded_companies: list[str] = Field(default=[], description="Companies to exclude")
+    required_benefits: list[str] = Field(default=[], description="Required benefits")
+    avoid_unpaid_trials: bool = Field(True, description="Avoid unpaid trial positions")
+    minimum_description_length: int = Field(100, description="Minimum job description length")
+    require_salary_disclosed: bool = Field(False, description="Require salary to be disclosed")
+    
+    # Smart matching
+    skill_weight: float = Field(0.4, description="Weight for skill matching")
+    location_weight: float = Field(0.2, description="Weight for location matching")
+    salary_weight: float = Field(0.3, description="Weight for salary matching")
+    company_weight: float = Field(0.1, description="Weight for company matching")
+    auto_learn_preferences: bool = Field(True, description="Auto-learn from user preferences")
     
     # DeepSeek API
     deepseek_api_key: str = Field("", description="DeepSeek API key")
@@ -204,24 +230,47 @@ async def update_config(config: ConfigModel):
         # Build config structure
         config_data = {
             "user": {
-                "email": config.email,
-                "password": config.password,
                 "agreement_accepted": config.agreement_accepted,
-                "agreement_timestamp": storage.get_timestamp()
+                "agreement_timestamp": storage.get_timestamp() if config.agreement_accepted else None
             },
             "job_preferences": {
                 "keywords": config.keywords,
+                "excluded_keywords": config.excluded_keywords,
                 "locations": config.locations,
                 "salary_min": config.salary_min,
                 "salary_max": config.salary_max,
                 "job_types": config.job_types,
-                "experience_levels": config.experience_levels
+                "experience_levels": config.experience_levels,
+                "industries": config.industries,
+                "company_size": config.company_size,
+                "remote_preference": config.remote_preference,
+                "visa_sponsorship": config.visa_sponsorship,
+                "minimum_rating": config.minimum_rating
             },
             "application_settings": {
                 "auto_apply": config.auto_apply,
                 "max_applications_per_day": config.max_applications_per_day,
                 "cover_letter_template": config.cover_letter_template,
-                "cv_path": config.cv_path
+                "cv_path": config.cv_path,
+                "apply_to_agencies": config.apply_to_agencies,
+                "skip_assessment_required": config.skip_assessment_required,
+                "minimum_job_age_days": config.minimum_job_age_days,
+                "maximum_job_age_days": config.maximum_job_age_days,
+                "preferred_application_times": config.preferred_application_times
+            },
+            "filters": {
+                "excluded_companies": config.excluded_companies,
+                "required_benefits": config.required_benefits,
+                "avoid_unpaid_trials": config.avoid_unpaid_trials,
+                "minimum_description_length": config.minimum_description_length,
+                "require_salary_disclosed": config.require_salary_disclosed
+            },
+            "smart_matching": {
+                "skill_weight": config.skill_weight,
+                "location_weight": config.location_weight,
+                "salary_weight": config.salary_weight,
+                "company_weight": config.company_weight,
+                "auto_learn_preferences": config.auto_learn_preferences
             },
             "deepseek_api": {
                 "api_key": config.deepseek_api_key,
@@ -303,6 +352,126 @@ async def clear_data(data_type: str):
         
     except Exception as e:
         logger.error(f"Data clearing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/test-config")
+async def test_config():
+    """Test current configuration"""
+    try:
+        storage = JSONStorage()
+        config = storage.load_config()
+        
+        # Basic validation
+        if not config.get("user", {}).get("agreement_accepted"):
+            return {"success": False, "message": "Terms not accepted"}
+        
+        if not config.get("job_preferences", {}).get("keywords"):
+            return {"success": False, "message": "No keywords specified"}
+        
+        return {"success": True, "message": "Configuration is valid"}
+        
+    except Exception as e:
+        logger.error(f"Config test failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/config/reset")
+async def reset_config():
+    """Reset configuration to defaults"""
+    try:
+        storage = JSONStorage()
+        # Delete existing config file to trigger default creation
+        if storage.config_file.exists():
+            storage.config_file.unlink()
+        
+        # Create new default config
+        storage._create_default_config()
+        
+        logger.info("Configuration reset to defaults")
+        return {"message": "Configuration reset successfully"}
+        
+    except Exception as e:
+        logger.error(f"Config reset failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/upload-resume")
+async def upload_resume(resume: UploadFile = File(...)):
+    """Upload resume file to data directory"""
+    try:
+        # Validate file type
+        allowed_types = ["application/pdf", "application/msword", 
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+        if resume.content_type not in allowed_types:
+            raise HTTPException(status_code=400, detail="Only PDF, DOC, and DOCX files are allowed")
+        
+        # Validate file size (5MB max)
+        if resume.size > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File size must be less than 5MB")
+        
+        # Create data directory if it doesn't exist
+        data_dir = Path("data")
+        data_dir.mkdir(exist_ok=True)
+        
+        # Generate unique filename
+        file_extension = Path(resume.filename).suffix
+        unique_filename = f"resume_{uuid.uuid4().hex[:8]}{file_extension}"
+        file_path = data_dir / unique_filename
+        
+        # Save file
+        with open(file_path, "wb") as buffer:
+            content = await resume.read()
+            buffer.write(content)
+        
+        logger.info(f"Resume uploaded successfully: {unique_filename}")
+        
+        return {
+            "success": True,
+            "filename": unique_filename,
+            "filepath": str(file_path),
+            "message": "Resume uploaded successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Resume upload failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/apply")
+async def apply_to_job(job_data: dict):
+    """Apply to a specific job"""
+    try:
+        storage = JSONStorage()
+        job_id = job_data.get("job_id")
+        
+        if not job_id:
+            raise HTTPException(status_code=400, detail="Job ID required")
+        
+        # Check if already applied
+        if storage.is_job_applied(job_id):
+            return {"success": False, "message": "Already applied to this job"}
+        
+        # Find job in storage
+        jobs = storage.load_jobs()
+        job = next((j for j in jobs if j.get("id") == job_id), None)
+        
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        # Save application
+        success = storage.save_applied_job(job)
+        
+        if success:
+            logger.info(f"Applied to job: {job.get('title')}")
+            return {"success": True, "message": "Application submitted successfully"}
+        else:
+            return {"success": False, "message": "Failed to save application"}
+        
+    except Exception as e:
+        logger.error(f"Job application failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
