@@ -1,0 +1,148 @@
+<!-- Data Display Tabs -->
+<div class="card bg-base-100 shadow-lg">
+  <div class="card-body">
+    <div class="flex justify-between items-center mb-4">
+      <div class="tabs tabs-boxed">
+        <a
+          class="tab"
+          :class="{ 'tab-active': activeTab === 'jobs' }"
+          @click="activeTab = 'jobs'"
+        >
+          🔍 Jobs (<span x-text="jobs.length"></span>)
+        </a>
+        <a
+          class="tab"
+          :class="{ 'tab-active': activeTab === 'applied' }"
+          @click="activeTab = 'applied'"
+        >
+          ✅ Applied (<span x-text="applied.length"></span>)
+        </a>
+        <a
+          class="tab"
+          :class="{ 'tab-active': activeTab === 'logs' }"
+          @click="activeTab = 'logs'"
+        >
+          📋 Logs (<span x-text="logs.length"></span>)
+        </a>
+        <a
+          class="tab"
+          :class="{ 'tab-active': activeTab === 'analytics' }"
+          @click="activeTab = 'analytics'"
+        >
+          📊 Analytics
+        </a>
+      </div>
+      
+      <!-- Tab Controls -->
+      <div class="dropdown dropdown-end">
+        <div tabindex="0" role="button" class="btn btn-sm btn-ghost">
+          ⚙️
+        </div>
+        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+          <li><a @click="exportData(activeTab)">📤 Export Data</a></li>
+          <li><a @click="clearData(activeTab)" class="text-error">🗑️ Clear Tab</a></li>
+          <li><a @click="refreshData()">🔄 Refresh All</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Jobs Tab -->
+    <div x-show="activeTab === 'jobs'" class="space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-semibold">🔍 Scraped Jobs</h3>
+        <div class="flex gap-2">
+          <select class="select select-sm select-bordered" x-model="jobsFilter">
+            <option value="all">All Jobs</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="high_salary">High Salary</option>
+          </select>
+          <input 
+            type="text" 
+            placeholder="Search jobs..." 
+            class="input input-sm input-bordered"
+            x-model="jobsSearch"
+          />
+        </div>
+      </div>
+      
+      <!-- Jobs Stats -->
+      <div class="stats stats-horizontal shadow w-full">
+        <div class="stat">
+          <div class="stat-title">Total Found</div>
+          <div class="stat-value text-sm" x-text="jobs.length"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">Today</div>
+          <div class="stat-value text-sm" x-text="jobsToday"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">Avg Salary</div>
+          <div class="stat-value text-sm" x-text="avgSalary"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">Remote</div>
+          <div class="stat-value text-sm" x-text="remoteJobs"></div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="table table-zebra table-sm">
+          <thead>
+            <tr>
+              <th>
+                <label class="cursor-pointer">
+                  <input type="checkbox" class="checkbox checkbox-xs" @change="selectAllJobs($event)" />
+                </label>
+              </th>
+              <th>Title & Company</th>
+              <th>Location</th>
+              <th>Salary</th>
+              <th>Posted</th>
+              <th>Match</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="job in filteredJobs.slice(0, 20)" :key="job.id">
+              <tr :class="{ 'bg-success/10': job.applied }">
+                <td>
+                  <input type="checkbox" class="checkbox checkbox-xs" x-model="job.selected" />
+                </td>
+                <td>
+                  <div class="font-semibold" x-text="job.title"></div>
+                  <div class="text-sm opacity-60" x-text="job.company"></div>
+                  <div class="flex gap-1 mt-1">
+                    <div class="badge badge-xs" x-show="job.remote">Remote</div>
+                    <div class="badge badge-xs badge-primary" x-show="job.urgent">Urgent</div>
+                  </div>
+                </td>
+                <td>
+                  <div class="text-sm" x-text="job.location"></div>
+                </td>
+                <td>
+                  <div class="text-sm font-medium" x-text="job.salary || 'Not specified'"></div>
+                </td>
+                <td>
+                  <div class="text-sm" x-text="job.posted_date"></div>
+                  <div class="text-xs opacity-60" x-text="job.posted_relative"></div>
+                </td>
+                <td>
+                  <div class="radial-progress text-xs" :style="`--value:${job.match_score || 0}`" x-text="`${job.match_score || 0}%`"></div>
+                </td>
+                <td>
+                  <div class="dropdown dropdown-end">
+                    <div tabindex="0" role="button" class="btn btn-ghost btn-xs">⋯</div>
+                    <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-32 p-1 shadow text-xs">
+                      <li><a @click="viewJob(job)">👁️ View</a></li>
+                      <li><a @click="applyToJob(job)" :class="{ 'text-success': job.applied }">✉️ Apply</a></li>
+                      <li><a @click="blacklistJob(job)" class="text-error">❌ Block</a></li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        
+        <!-- Load more button -->

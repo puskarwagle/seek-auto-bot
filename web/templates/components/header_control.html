@@ -1,0 +1,104 @@
+<!-- Header -->
+<div class="navbar bg-base-100 rounded-box shadow-lg mb-6">
+  <div class="flex-1">
+    <h1 class="text-xl font-bold text-primary">⚡ Seek Bot Dashboard</h1>
+  </div>
+  <div class="flex-none gap-2">
+    <div class="badge badge-lg" :class="status.running ? 'badge-success' : 'badge-neutral'">
+      <span class="loading loading-dots loading-xs mr-1" x-show="status.running"></span>
+      <span x-text="status.running ? 'RUNNING' : 'IDLE'"></span>
+    </div>
+    <div class="dropdown dropdown-end">
+      <div tabindex="0" role="button" class="btn btn-ghost btn-circle">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+      </div>
+      <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+        <li><a @click="exportConfig()">📤 Export Config</a></li>
+        <li><a @click="importConfig()">📥 Import Config</a></li>
+        <li><a @click="resetConfig()">🔄 Reset All</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Status Dashboard -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <!-- Status Card -->
+  <div class="card bg-base-100 shadow-lg">
+    <div class="card-body">
+      <h2 class="card-title text-primary">📊 Bot Status</h2>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="stat place-items-center">
+          <div class="stat-title">Current Task</div>
+          <div class="stat-value text-xs text-center" x-text="status.current_task || 'Idle'"></div>
+        </div>
+        <div class="stat place-items-center">
+          <div class="stat-title">Jobs Found</div>
+          <div class="stat-value text-accent" x-text="status.jobs_found || 0"></div>
+        </div>
+        <div class="stat place-items-center">
+          <div class="stat-title">Applied Today</div>
+          <div class="stat-value text-success" x-text="status.applications_sent || 0"></div>
+        </div>
+        <div class="stat place-items-center">
+          <div class="stat-title">Errors</div>
+          <div class="stat-value text-error" x-text="status.errors || 0"></div>
+        </div>
+      </div>
+      
+      <!-- Progress bar for daily limit -->
+      <div class="mt-4" x-show="config.application_settings.max_applications_per_day">
+        <div class="text-sm opacity-70 mb-1">Daily Progress</div>
+        <progress 
+          class="progress progress-success w-full" 
+          :value="status.applications_sent || 0" 
+          :max="config.application_settings.max_applications_per_day"
+        ></progress>
+        <div class="text-xs opacity-60 mt-1">
+          <span x-text="status.applications_sent || 0"></span> / <span x-text="config.application_settings.max_applications_per_day"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Control Panel -->
+  <div class="card bg-base-100 shadow-lg">
+    <div class="card-body">
+      <h2 class="card-title text-primary">🎮 Control Panel</h2>
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <button
+          class="btn btn-success"
+          :disabled="status.running || !config.user.agreement_accepted"
+          @click="startBot()"
+          :class="{ 'loading': startingBot }"
+        >
+          <span x-show="!startingBot">🚀 Start</span>
+          <span x-show="startingBot">Starting...</span>
+        </button>
+        <button
+          class="btn btn-error"
+          :disabled="!status.running"
+          @click="stopBot()"
+          :class="{ 'loading': stoppingBot }"
+        >
+          <span x-show="!stoppingBot">⏹️ Stop</span>
+          <span x-show="stoppingBot">Stopping...</span>
+        </button>
+        <button class="btn btn-info" @click="refreshStatus()">
+          🔄 Refresh
+        </button>
+        <button class="btn btn-warning" @click="testConfig()">
+          🧪 Test Config
+        </button>
+      </div>
+      
+      <!-- Quick Stats -->
+      <div class="mt-4 p-3 bg-base-200 rounded-lg">
+        <div class="text-xs opacity-70">Last Updated: <span x-text="status.last_updated || 'Never'"></span></div>
+        <div class="text-xs opacity-70">Uptime: <span x-text="status.uptime || '0m'"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
