@@ -4,6 +4,7 @@ Seek Bot Core - Now serves THE supreme browser overlord
 """
 
 import asyncio
+import json
 from utils.logging import logger
 from utils.storage import JSONStorage
 from utils.errors import SeekBotError, handle_critical_error
@@ -17,12 +18,28 @@ class SeekBot:
     
     def __init__(self):
         self.storage = JSONStorage()
+        # Load config for scraper
+        self.config = self._load_config()
         # No longer create our own browser manager - we serve THE overlord
         self.auth = SeekAuth()  # Remove browser_manager parameter
-        self.scraper = SeekScraper()  # Remove browser_manager parameter
+        self.scraper = SeekScraper(self.config)  # Pass config to scraper
         self.running = False
         self.current_task = "idle"
         self.driver = None  # Will be provided by THE overlord
+    
+    def _load_config(self):
+        """Load configuration from settings.json"""
+        try:
+            with open('config/settings.json', 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.warning(f"Failed to load config: {e}, using defaults")
+            return {
+                "job_preferences": {
+                    "keywords": ["python"],
+                    "locations": ["Sydney"]
+                }
+            }
     
     async def initialize(self) -> bool:
         """Initialize bot and validate configuration"""

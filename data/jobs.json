@@ -1,11 +1,11 @@
 {
   "jobs": [
     {
-      "message": "Search completed successfully",
-      "search_term": "potter",
-      "location": "Melbourne"
+      "search_term": "python developer",
+      "location": "Sydney",
+      "status": "success"
     }
   ],
   "total_count": 1,
-  "last_updated": "2025-07-19T11:04:48.579490"
+  "last_updated": "2025-07-19T12:09:05.378327"
 }

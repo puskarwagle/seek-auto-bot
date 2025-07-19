@@ -467,7 +467,7 @@ class JSONStorage:
                 return False
         
         # Validate user section
-        user_fields = ["email", "password", "agreement_accepted"]
+        user_fields = ["agreement_accepted"]
         for field in user_fields:
             if field not in config["user"]:
                 logger.error(f"Missing user field: {field}")
