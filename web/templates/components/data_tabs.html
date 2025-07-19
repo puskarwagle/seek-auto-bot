@@ -104,7 +104,7 @@
             </tr>
           </thead>
           <tbody>
-            <template x-for="job in filteredJobs.slice(0, 20)" :key="job.id">
+            <template x-for="job in filteredJobs.slice(0, 50)" :key="job.id">
               <tr :class="{ 'bg-success/10': job.applied }">
                 <td>
                   <input type="checkbox" class="checkbox checkbox-xs" x-model="job.selected" />
@@ -146,3 +146,252 @@
         </table>
         
         <!-- Load more button -->
+        <div class="text-center mt-4" x-show="filteredJobs.length > 50">
+          <button class="btn btn-ghost btn-sm" @click="loadMoreJobs()">
+            Load More Jobs...
+          </button>
+        </div>
+      </div>
+      
+      <!-- Bulk Actions -->
+      <div class="flex gap-2 mt-4" x-show="selectedJobs.length > 0">
+        <button class="btn btn-sm btn-success" @click="bulkApply()">
+          ✉️ Apply to <span x-text="selectedJobs.length"></span> Jobs
+        </button>
+        <button class="btn btn-sm btn-error" @click="bulkBlacklist()">
+          ❌ Blacklist Selected
+        </button>
+      </div>
+    </div>
+
+    <!-- Applied Tab -->
+    <div x-show="activeTab === 'applied'" class="space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-semibold">✅ Applied Jobs</h3>
+        <div class="flex gap-2">
+          <select class="select select-sm select-bordered" x-model="appliedFilter">
+            <option value="all">All Applications</option>
+            <option value="pending">Pending</option>
+            <option value="replied">Company Replied</option>
+            <option value="rejected">Rejected</option>
+            <option value="interview">Interview</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Applied Stats -->
+      <div class="stats stats-horizontal shadow w-full">
+        <div class="stat">
+          <div class="stat-title">Total Applied</div>
+          <div class="stat-value text-sm" x-text="applied.length"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">Response Rate</div>
+          <div class="stat-value text-sm" x-text="`${responseRate}%`"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">Interviews</div>
+          <div class="stat-value text-sm" x-text="interviewCount"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">This Week</div>
+          <div class="stat-value text-sm" x-text="appliedThisWeek"></div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="table table-zebra table-sm">
+          <thead>
+            <tr>
+              <th>Job Title</th>
+              <th>Company</th>
+              <th>Applied Date</th>
+              <th>Status</th>
+              <th>Response Time</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="app in filteredApplied" :key="app.id">
+              <tr>
+                <td>
+                  <div class="font-semibold" x-text="app.job_title"></div>
+                  <div class="text-xs opacity-60" x-text="app.job_location"></div>
+                </td>
+                <td>
+                  <div class="text-sm" x-text="app.company"></div>
+                </td>
+                <td>
+                  <div class="text-sm" x-text="app.applied_date"></div>
+                  <div class="text-xs opacity-60" x-text="app.applied_relative"></div>
+                </td>
+                <td>
+                  <div class="badge badge-sm" 
+                       :class="{
+                         'badge-success': app.status === 'interview',
+                         'badge-warning': app.status === 'pending',
+                         'badge-error': app.status === 'rejected',
+                         'badge-info': app.status === 'replied'
+                       }"
+                       x-text="app.status">
+                  </div>
+                </td>
+                <td>
+                  <div class="text-sm" x-text="app.response_time || 'No response'"></div>
+                </td>
+                <td>
+                  <div class="dropdown dropdown-end">
+                    <div tabindex="0" role="button" class="btn btn-ghost btn-xs">⋯</div>
+                    <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-40 p-1 shadow text-xs">
+                      <li><a @click="viewApplication(app)">👁️ View Details</a></li>
+                      <li><a @click="updateStatus(app)">🔄 Update Status</a></li>
+                      <li><a @click="addNote(app)">📝 Add Note</a></li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Logs Tab -->
+    <div x-show="activeTab === 'logs'" class="space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-semibold">📋 System Logs</h3>
+        <div class="flex gap-2">
+          <select class="select select-sm select-bordered" x-model="logLevel">
+            <option value="all">All Logs</option>
+            <option value="error">Errors</option>
+            <option value="warning">Warnings</option>
+            <option value="info">Info</option>
+            <option value="debug">Debug</option>
+          </select>
+          <button class="btn btn-sm btn-ghost" @click="clearLogs()">🗑️ Clear</button>
+        </div>
+      </div>
+      
+      <div class="bg-black text-green-400 p-4 rounded-lg h-96 overflow-y-auto font-mono text-sm">
+        <template x-for="log in filteredLogs" :key="log.id">
+          <div class="mb-1" 
+               :class="{
+                 'text-red-400': log.level === 'error',
+                 'text-yellow-400': log.level === 'warning',
+                 'text-blue-400': log.level === 'info',
+                 'text-gray-400': log.level === 'debug'
+               }">
+            <span class="opacity-60" x-text="log.timestamp"></span>
+            <span class="font-bold" x-text="`[${log.level.toUpperCase()}]`"></span>
+            <span x-text="log.message"></span>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div x-show="activeTab === 'analytics'" class="space-y-4">
+      <h3 class="text-lg font-semibold">📊 Analytics Dashboard</h3>
+      
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card bg-primary text-primary-content">
+          <div class="card-body p-4">
+            <div class="stat-value text-2xl" x-text="analytics.totalJobs"></div>
+            <div class="stat-title text-primary-content/70">Jobs Scraped</div>
+            <div class="stat-desc text-primary-content/50" x-text="`+${analytics.jobsToday} today`"></div>
+          </div>
+        </div>
+        
+        <div class="card bg-success text-success-content">
+          <div class="card-body p-4">
+            <div class="stat-value text-2xl" x-text="analytics.totalApplications"></div>
+            <div class="stat-title text-success-content/70">Applications Sent</div>
+            <div class="stat-desc text-success-content/50" x-text="`${analytics.successRate}% success rate`"></div>
+          </div>
+        </div>
+        
+        <div class="card bg-info text-info-content">
+          <div class="card-body p-4">
+            <div class="stat-value text-2xl" x-text="analytics.avgSalary"></div>
+            <div class="stat-title text-info-content/70">Avg Salary (AUD)</div>
+            <div class="stat-desc text-info-content/50" x-text="`${analytics.salaryRange} range`"></div>
+          </div>
+        </div>
+        
+        <div class="card bg-warning text-warning-content">
+          <div class="card-body p-4">
+            <div class="stat-value text-2xl" x-text="analytics.responseRate"></div>
+            <div class="stat-title text-warning-content/70">Response Rate</div>
+            <div class="stat-desc text-warning-content/50" x-text="`${analytics.avgResponseTime} avg time`"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Applications Timeline -->
+        <div class="card bg-base-100">
+          <div class="card-body">
+            <h4 class="card-title text-sm">Applications Over Time</h4>
+            <div class="h-48 bg-base-200 rounded flex items-center justify-center">
+              <div class="text-center opacity-60">
+                <div class="text-2xl mb-2">📈</div>
+                <div class="text-sm">Chart would go here</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Salary Distribution -->
+        <div class="card bg-base-100">
+          <div class="card-body">
+            <h4 class="card-title text-sm">Salary Distribution</h4>
+            <div class="h-48 bg-base-200 rounded flex items-center justify-center">
+              <div class="text-center opacity-60">
+                <div class="text-2xl mb-2">💰</div>
+                <div class="text-sm">Salary chart would go here</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Top Companies -->
+      <div class="card bg-base-100">
+        <div class="card-body">
+          <h4 class="card-title text-sm">Top Companies by Job Count</h4>
+          <div class="overflow-x-auto">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>Jobs Posted</th>
+                  <th>Applied</th>
+                  <th>Response Rate</th>
+                  <th>Avg Salary</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="company in analytics.topCompanies" :key="company.name">
+                  <tr>
+                    <td class="font-semibold" x-text="company.name"></td>
+                    <td x-text="company.jobs_count"></td>
+                    <td x-text="company.applied_count"></td>
+                    <td>
+                      <div class="badge badge-sm" 
+                           :class="company.response_rate > 20 ? 'badge-success' : 'badge-warning'"
+                           x-text="`${company.response_rate}%`">
+                      </div>
+                    </td>
+                    <td x-text="company.avg_salary"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

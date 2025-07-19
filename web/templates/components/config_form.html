@@ -1,415 +1,399 @@
 <!-- Configuration Form -->
 <div class="card bg-base-100 shadow-lg mb-6">
-    <div class="card-body">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="card-title text-primary">⚙️ Configuration</h2>
-        <div class="flex gap-2">
-          <button class="btn btn-sm btn-outline" @click="validateConfig()">✅ Validate</button>
-          <button class="btn btn-sm btn-ghost" @click="toggleAdvanced = !toggleAdvanced">
-            <span x-text="toggleAdvanced ? '🔧 Basic' : '🔧 Advanced'"></span>
-          </button>
+  <div class="card-body">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="card-title text-primary">⚙️ Configuration</h2>
+      <div class="flex gap-2">
+        <button class="btn btn-sm btn-outline" @click="validateConfig()">✅ Validate</button>
+        <button class="btn btn-sm btn-ghost" @click="toggleAdvanced = !toggleAdvanced">
+          <span x-text="toggleAdvanced ? '🔧 Basic' : '🔧 Advanced'"></span>
+        </button>
+      </div>
+    </div>
+
+    <form @submit.prevent="updateConfig()">
+
+      <!-- Job Preferences -->
+      <div class="collapse collapse-open bg-base-200 mb-4">
+        <div class="collapse-title text-lg font-medium">🎯 Job Preferences</div>
+        <div class="collapse-content">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Keywords (comma separated)</span>
+                <span class="label-text-alt text-warning">Required</span>
+              </label>
+              <input type="text" class="input input-bordered" x-model="keywordsText"
+                placeholder="python, backend, api, django" required />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Excluded Keywords</span>
+              </label>
+              <input type="text" class="input input-bordered" x-model="excludedKeywordsText"
+                placeholder="junior, intern, php" />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Locations (comma separated)</span>
+              </label>
+              <input type="text" class="input input-bordered" x-model="locationsText"
+                placeholder="Sydney, Melbourne, Remote" />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Minimum Salary (AUD)</span>
+              </label>
+              <input type="number" class="input input-bordered" x-model="config.job_preferences.salary_min"
+                placeholder="80000" min="0" />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Maximum Salary (AUD)</span>
+              </label>
+              <input type="number" class="input input-bordered" x-model="config.job_preferences.salary_max"
+                placeholder="150000" min="0" />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Job Types</span>
+              </label>
+              <select class="select select-bordered" x-model="config.job_preferences.job_types" multiple>
+                <option value="full-time">Full-time</option>
+                <option value="part-time">Part-time</option>
+                <option value="contract">Contract</option>
+                <option value="casual">Casual</option>
+                <option value="internship">Internship</option>
+              </select>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Experience Levels</span>
+              </label>
+              <select class="select select-bordered" x-model="config.job_preferences.experience_levels" multiple>
+                <option value="entry">Entry Level</option>
+                <option value="mid">Mid Level</option>
+                <option value="senior">Senior</option>
+                <option value="lead">Lead</option>
+                <option value="executive">Executive</option>
+              </select>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Industries</span>
+              </label>
+              <input type="text" class="input input-bordered" x-model="industriesText"
+                placeholder="fintech, saas, healthcare" />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Remote Preference</span>
+              </label>
+              <select class="select select-bordered" x-model="config.job_preferences.remote_preference">
+                <option value="any">Any</option>
+                <option value="remote_only">Remote Only</option>
+                <option value="hybrid_ok">Hybrid OK</option>
+                <option value="onsite_only">Onsite Only</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Advanced Job Preferences -->
+          <div x-show="toggleAdvanced" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t">
+            <div class="form-control">
+              <label class="label cursor-pointer">
+                <span class="label-text">Requires Visa Sponsorship</span>
+                <input type="checkbox" class="checkbox checkbox-primary"
+                  x-model="config.job_preferences.visa_sponsorship" />
+              </label>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Minimum Company Rating</span>
+              </label>
+              <input type="number" class="input input-bordered" x-model="config.job_preferences.minimum_rating"
+                placeholder="3.5" min="1" max="5" step="0.1" />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Company Size</span>
+              </label>
+              <select class="select select-bordered" x-model="config.job_preferences.company_size" multiple>
+                <option value="startup">Startup (1-50)</option>
+                <option value="small">Small (51-200)</option>
+                <option value="medium">Medium (201-1000)</option>
+                <option value="large">Large (1001-5000)</option>
+                <option value="enterprise">Enterprise (5000+)</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
-  
-      <form @submit.prevent="updateConfig()">
-        
-        <!-- Job Preferences -->
-        <div class="collapse collapse-open bg-base-200 mb-4">
-          <div class="collapse-title text-lg font-medium">🎯 Job Preferences</div>
-          <div class="collapse-content">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Keywords (comma separated)</span>
-                  <span class="label-text-alt text-warning">Required</span>
-                </label>
-                <input
-                  type="text"
-                  class="input input-bordered"
-                  x-model="keywordsText"
-                  placeholder="python, backend, api, django"
-                  required
-                />
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Excluded Keywords</span>
-                </label>
-                <input
-                  type="text"
-                  class="input input-bordered"
-                  x-model="excludedKeywordsText"
-                  placeholder="junior, intern, php"
-                />
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Locations (comma separated)</span>
-                </label>
-                <input
-                  type="text"
-                  class="input input-bordered"
-                  x-model="locationsText"
-                  placeholder="Sydney, Melbourne, Remote"
-                />
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Minimum Salary (AUD)</span>
-                </label>
-                <input
-                  type="number"
-                  class="input input-bordered"
-                  x-model="config.job_preferences.salary_min"
-                  placeholder="80000"
-                  min="0"
-                />
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Maximum Salary (AUD)</span>
-                </label>
-                <input
-                  type="number"
-                  class="input input-bordered"
-                  x-model="config.job_preferences.salary_max"
-                  placeholder="150000"
-                  min="0"
-                />
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Job Types</span>
-                </label>
-                <select class="select select-bordered" x-model="selectedJobTypes" multiple>
-                  <option value="full-time">Full-time</option>
-                  <option value="part-time">Part-time</option>
-                  <option value="contract">Contract</option>
-                  <option value="casual">Casual</option>
-                  <option value="internship">Internship</option>
-                </select>
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Experience Levels</span>
-                </label>
-                <select class="select select-bordered" x-model="selectedExperienceLevels" multiple>
-                  <option value="entry">Entry Level</option>
-                  <option value="mid">Mid Level</option>
-                  <option value="senior">Senior</option>
-                  <option value="lead">Lead</option>
-                  <option value="executive">Executive</option>
-                </select>
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Industries</span>
-                </label>
-                <input
-                  type="text"
-                  class="input input-bordered"
-                  x-model="industriesText"
-                  placeholder="fintech, saas, healthcare"
-                />
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Remote Preference</span>
-                </label>
-                <select class="select select-bordered" x-model="config.job_preferences.remote_preference">
-                  <option value="any">Any</option>
-                  <option value="remote_only">Remote Only</option>
-                  <option value="hybrid_ok">Hybrid OK</option>
-                  <option value="onsite_only">Onsite Only</option>
-                </select>
-              </div>
-            </div>
-  
-            <!-- Advanced Job Preferences -->
-            <div x-show="toggleAdvanced" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t">
-              <div class="form-control">
-                <label class="label cursor-pointer">
-                  <span class="label-text">Requires Visa Sponsorship</span>
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-primary"
-                    x-model="config.job_preferences.visa_sponsorship"
-                  />
-                </label>
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Minimum Company Rating</span>
-                </label>
-                <input
-                  type="number"
-                  class="input input-bordered"
-                  x-model="config.job_preferences.minimum_rating"
-                  placeholder="3.5"
-                  min="1"
-                  max="5"
-                  step="0.1"
-                />
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Company Size</span>
-                </label>
-                <select class="select select-bordered" x-model="selectedCompanySize" multiple>
-                  <option value="startup">Startup (1-50)</option>
-                  <option value="small">Small (51-200)</option>
-                  <option value="medium">Medium (201-1000)</option>
-                  <option value="large">Large (1001-5000)</option>
-                  <option value="enterprise">Enterprise (5000+)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Application Settings -->
-        <div class="collapse collapse-open bg-base-200 mb-4">
-          <div class="collapse-title text-lg font-medium">🤖 Application Settings</div>
-          <div class="collapse-content">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div class="form-control">
-                <label class="label cursor-pointer">
-                  <span class="label-text">Auto Apply</span>
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-primary"
-                    x-model="config.application_settings.auto_apply"
-                  />
-                </label>
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Max Applications per Day</span>
-                </label>
-                <input
-                  type="number"
-                  class="input input-bordered"
-                  x-model="config.application_settings.max_applications_per_day"
-                  min="1"
-                  max="100"
-                  placeholder="15"
-                />
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Cooldown Between Apps (seconds)</span>
-                </label>
-                <input
-                  type="number"
-                  class="input input-bordered"
-                  x-model="config.application_settings.cooldown_between_applications"
-                  min="30"
-                  max="3600"
-                  placeholder="300"
-                />
-              </div>
-              
-              <div class="form-control">
-                <label class="label cursor-pointer">
-                  <span class="label-text">Skip Recruitment Agencies</span>
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-primary"
-                    x-model="config.application_settings.apply_to_agencies"
-                  />
-                </label>
-              </div>
-              
-              <div class="form-control">
-                <label class="label cursor-pointer">
-                  <span class="label-text">Skip Assessment Required</span>
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-primary"
-                    x-model="config.application_settings.skip_assessment_required"
-                  />
-                </label>
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Min Job Age (days)</span>
-                </label>
-                <input
-                  type="number"
-                  class="input input-bordered"
-                  x-model="config.application_settings.minimum_job_age_days"
-                  min="0"
-                  max="30"
-                  placeholder="1"
-                />
-              </div>
-            </div>
-            
-            <div class="form-control mt-4">
+
+      <!-- Application Settings -->
+      <div class="collapse collapse-open bg-base-200 mb-4">
+        <div class="collapse-title text-lg font-medium">🤖 Application Settings</div>
+        <div class="collapse-content">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="form-control">
               <label class="label">
-                <span class="label-text">Cover Letter Template</span>
-                <span class="label-text-alt">Use {company}, {role}, {name} as placeholders</span>
+                <span class="label-text">Max Applications per Day</span>
               </label>
-              <textarea
-                class="textarea textarea-bordered h-32"
-                x-model="config.application_settings.cover_letter_template"
-                placeholder="Dear {company} Team,&#10;&#10;I am excited to apply for the {role} position...&#10;&#10;Best regards,&#10;{name}"
-              ></textarea>
+              <input type="number" class="input input-bordered"
+                x-model="config.application_settings.max_applications_per_day" min="1" max="100" placeholder="15" />
             </div>
-          </div>
-        </div>
-  
-        <!-- Filters & Quality Control -->
-        <div class="collapse collapse-open bg-base-200 mb-4">
-          <div class="collapse-title text-lg font-medium">🎯 Quality Filters</div>
-          <div class="collapse-content">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Excluded Companies (comma separated)</span>
-                </label>
-                <input
-                  type="text"
-                  class="input input-bordered"
-                  x-model="excludedCompaniesText"
-                  placeholder="wipro, infosys, tcs"
-                />
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Required Benefits</span>
-                </label>
-                <select class="select select-bordered" x-model="selectedBenefits" multiple>
-                  <option value="health_insurance">Health Insurance</option>
-                  <option value="super">Superannuation</option>
-                  <option value="remote_work">Remote Work</option>
-                  <option value="flexible_hours">Flexible Hours</option>
-                  <option value="learning_budget">Learning Budget</option>
-                </select>
-              </div>
-              
-              <div class="form-control">
-                <label class="label cursor-pointer">
-                  <span class="label-text">Avoid Unpaid Trials</span>
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-primary"
-                    x-model="config.filters.avoid_unpaid_trials"
-                  />
-                </label>
-              </div>
-              
-              <div class="form-control">
-                <label class="label cursor-pointer">
-                  <span class="label-text">Require Salary Disclosed</span>
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-primary"
-                    x-model="config.filters.require_salary_disclosed"
-                  />
-                </label>
-              </div>
-              
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Min Description Length</span>
-                </label>
-                <input
-                  type="number"
-                  class="input input-bordered"
-                  x-model="config.filters.minimum_description_length"
-                  min="50"
-                  max="1000"
-                  placeholder="100"
-                />
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Min Job Age (days)</span>
+              </label>
+              <input type="number" class="input input-bordered"
+                x-model="config.application_settings.minimum_job_age_days" min="0" max="30" placeholder="1" />
+            </div>
+
+            <div class="form-control">
+              <label class="label cursor-pointer">
+                <span class="label-text">Skip Recruitment Agencies</span>
+                <input type="checkbox" class="checkbox checkbox-primary"
+                  x-model="config.application_settings.apply_to_agencies" />
+              </label>
+            </div>
+
+            <div class="form-control">
+              <label class="label cursor-pointer">
+                <span class="label-text">Skip Assessment Required</span>
+                <input type="checkbox" class="checkbox checkbox-primary"
+                  x-model="config.application_settings.skip_assessment_required" />
+              </label>
+            </div>
+
+            <div class="form-control">
+              <label class="label cursor-pointer">
+                <span class="label-text">Auto Apply</span>
+                <input type="checkbox" class="checkbox checkbox-primary"
+                  x-model="config.application_settings.auto_apply" />
+              </label>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Max Job Age (days)</span>
+              </label>
+              <input type="number" class="input input-bordered"
+                x-model="config.application_settings.maximum_job_age_days" min="1" max="30" placeholder="7" />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Resume Upload</span>
+                <span class="label-text-alt">PDF format recommended</span>
+              </label>
+              <div class="flex flex-col gap-2">
+                <input type="file" class="file-input file-input-bordered" 
+                       accept=".pdf,.doc,.docx" 
+                       @change="handleResumeUpload($event)"
+                       id="resume-upload" />
+                <div x-show="config.application_settings.resume_filename" 
+                     class="text-sm text-success flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                  </svg>
+                  <span x-text="'Uploaded: ' + config.application_settings.resume_filename"></span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-  
-        <!-- DeepSeek API -->
-        <div class="collapse bg-base-200 mb-4" x-show="toggleAdvanced">
-          <input type="checkbox" class="collapse-toggle" /> 
-          <div class="collapse-title text-lg font-medium">🤖 DeepSeek AI Integration</div>
-          <div class="collapse-content">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="form-control">
-                <label class="label cursor-pointer">
-                  <span class="label-text">Enable DeepSeek</span>
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-primary"
-                    x-model="config.deepseek_api.enabled"
-                  />
-                </label>
-              </div>
-              
-              <div class="form-control" x-show="config.deepseek_api.enabled">
-                <label class="label">
-                  <span class="label-text">API Key</span>
-                </label>
-                <input
-                  type="password"
-                  class="input input-bordered"
-                  x-model="config.deepseek_api.api_key"
-                  placeholder="sk-..."
-                />
-              </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Preferred Application Times</span>
+                <span class="label-text-alt">HH:MM format, comma separated</span>
+              </label>
+              <input type="text" class="input input-bordered" x-model="preferredTimesText" placeholder="09:00, 17:00" />
             </div>
+
           </div>
-        </div>
-  
-        <!-- Agreement -->
-        <div class="alert alert-warning mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
-          <div>
-            <h3 class="font-bold">Legal Disclaimer</h3>
-            <div class="text-xs">Using this bot may violate Seek's Terms of Service. You assume all responsibility.</div>
-          </div>
-          <div class="form-control">
-            <label class="label cursor-pointer">
-              <span class="label-text font-semibold">I understand and accept</span>
-              <input
-                type="checkbox"
-                class="checkbox checkbox-warning"
-                x-model="config.user.agreement_accepted"
-                required
-              />
+
+          <div class="form-control mt-4">
+            <label class="label">
+              <span class="label-text">Cover Letter Template</span>
+              <span class="label-text-alt">Use {company}, {role}, {name} as placeholders</span>
             </label>
+            <textarea class="textarea textarea-bordered h-32"
+              x-model="config.application_settings.cover_letter_template"
+              placeholder="Dear {company} Team,&#10;&#10;I am excited to apply for the {role} position...&#10;&#10;Best regards,&#10;{name}"></textarea>
           </div>
         </div>
-  
-        <!-- Submit Button -->
-        <div class="flex gap-4">
-          <button
-            type="submit"
-            class="btn btn-primary flex-1"
-            :class="{ 'loading': savingConfig }"
-            :disabled="!config.user.agreement_accepted"
-          >
-            <span x-show="!savingConfig">💾 Save Configuration</span>
-            <span x-show="savingConfig">Saving...</span>
-          </button>
-          <button type="button" class="btn btn-ghost" @click="resetForm()">
-            🔄 Reset Form
-          </button>
+      </div>
+
+      <!-- Filters & Quality Control -->
+      <div class="collapse collapse-open bg-base-200 mb-4">
+        <div class="collapse-title text-lg font-medium">🎯 Quality Filters</div>
+        <div class="collapse-content">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Excluded Companies (comma separated)</span>
+              </label>
+              <input type="text" class="input input-bordered" x-model="excludedCompaniesText"
+                placeholder="wipro, infosys, tcs" />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Required Benefits</span>
+              </label>
+              <select class="select select-bordered" x-model="config.filters.required_benefits" multiple>
+                <option value="health_insurance">Health Insurance</option>
+                <option value="super">Superannuation</option>
+                <option value="remote_work">Remote Work</option>
+                <option value="flexible_hours">Flexible Hours</option>
+                <option value="learning_budget">Learning Budget</option>
+              </select>
+            </div>
+
+            <div class="form-control">
+              <label class="label cursor-pointer">
+                <span class="label-text">Avoid Unpaid Trials</span>
+                <input type="checkbox" class="checkbox checkbox-primary" x-model="config.filters.avoid_unpaid_trials" />
+              </label>
+            </div>
+
+            <div class="form-control">
+              <label class="label cursor-pointer">
+                <span class="label-text">Require Salary Disclosed</span>
+                <input type="checkbox" class="checkbox checkbox-primary"
+                  x-model="config.filters.require_salary_disclosed" />
+              </label>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Min Description Length</span>
+              </label>
+              <input type="number" class="input input-bordered" x-model="config.filters.minimum_description_length"
+                min="50" max="1000" placeholder="100" />
+            </div>
+          </div>
         </div>
-      </form>
-    </div>
+      </div>
+
+      <!-- Smart Matching -->
+      <div class="collapse bg-base-200 mb-4" x-show="toggleAdvanced">
+        <input type="checkbox" class="collapse-toggle" />
+        <div class="collapse-title text-lg font-medium">� Smarte Matching Weights</div>
+        <div class="collapse-content">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Skill Weight</span>
+                <span class="label-text-alt">0.0 - 1.0</span>
+              </label>
+              <input type="number" class="input input-bordered" x-model="config.smart_matching.skill_weight" min="0"
+                max="1" step="0.1" placeholder="0.4" />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Location Weight</span>
+                <span class="label-text-alt">0.0 - 1.0</span>
+              </label>
+              <input type="number" class="input input-bordered" x-model="config.smart_matching.location_weight" min="0"
+                max="1" step="0.1" placeholder="0.2" />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Salary Weight</span>
+                <span class="label-text-alt">0.0 - 1.0</span>
+              </label>
+              <input type="number" class="input input-bordered" x-model="config.smart_matching.salary_weight" min="0"
+                max="1" step="0.1" placeholder="0.3" />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Company Weight</span>
+                <span class="label-text-alt">0.0 - 1.0</span>
+              </label>
+              <input type="number" class="input input-bordered" x-model="config.smart_matching.company_weight" min="0"
+                max="1" step="0.1" placeholder="0.1" />
+            </div>
+
+            <div class="form-control">
+              <label class="label cursor-pointer">
+                <span class="label-text">Auto-learn Preferences</span>
+                <input type="checkbox" class="checkbox checkbox-primary"
+                  x-model="config.smart_matching.auto_learn_preferences" />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DeepSeek API -->
+      <div class="collapse bg-base-200 mb-4" x-show="toggleAdvanced">
+        <input type="checkbox" class="collapse-toggle" />
+        <div class="collapse-title text-lg font-medium">🤖 DeepSeek AI Integration</div>""
+        <div class="collapse-content">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label cursor-pointer">
+                <span class="label-text">Enable DeepSeek</span>
+                <input type="checkbox" class="checkbox checkbox-primary" x-model="config.deepseek_api.enabled" />
+              </label>
+            </div>
+
+            <div class="form-control" x-show="config.deepseek_api.enabled">
+              <label class="label">
+                <span class="label-text">API Key</span>
+              </label>
+              <input type="password" class="input input-bordered" x-model="config.deepseek_api.api_key"
+                placeholder="sk-..." />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agreement -->
+      <div class="alert alert-warning mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
+        </svg>
+        <div>
+          <h3 class="font-bold">Legal Disclaimer</h3>
+          <div class="text-xs">Using this bot may violate Seek's Terms of Service. You assume all responsibility.</div>
+        </div>
+        <div class="form-control">
+          <label class="label cursor-pointer">
+            <span class="label-text font-semibold">I understand and accept</span>
+            <input type="checkbox" class="checkbox checkbox-warning" x-model="config.user.agreement_accepted"
+              required />
+          </label>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="flex gap-4">
+        <button type="submit" class="btn btn-primary flex-1" :class="{ 'loading': savingConfig }"
+          :disabled="!config.user.agreement_accepted">
+          <span x-show="!savingConfig">💾 Save Configuration</span>
+          <span x-show="savingConfig">Saving...</span>
+        </button>
+        <button type="button" class="btn btn-ghost" @click="resetForm()">
+          🔄 Reset Form
+        </button>
+      </div>
+    </form>
   </div>
+</div>
